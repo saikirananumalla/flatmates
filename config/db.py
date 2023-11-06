@@ -1,12 +1,15 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+import pymysql
+from pymysql import Connection
 
-SQLALCHEMY_DATABASE_URL = "mysql://root:password@localhost:3306/roommates"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL
-)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
+def getConnection() -> Connection :
+    try:
+        connection = pymysql.connect(host='localhost',
+                                    user = 'root',
+                                    password='password',
+                                    database='roommates',
+                                    cursorclass=pymysql.cursors.DictCursor,
+                                    autocommit=True)
+        return connection
+    except pymysql.err.OperationalError as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+        
