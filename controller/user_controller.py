@@ -3,10 +3,12 @@ from pydantic.schema import List
 
 from model import user as us
 from dao import user_dao
-from app import app
+from fastapi import APIRouter
+
+user_router = APIRouter()
 
 
-@app.post("/user/", response_model=us.User)
+@user_router.post("/user/", response_model=us.User)
 def create_user(user: us.User):
     db_user = user_dao.get_user_by_user_name(user_name=user.user_name)
     if db_user:
@@ -14,7 +16,7 @@ def create_user(user: us.User):
     return user_dao.create_user(user=user)
 
 
-@app.get("/user_by_email/", response_model=List[us.User])
+@user_router.get("/user_by_email/", response_model=List[us.User])
 def read_users_by_email_id(email_id: str):
 
     db_user = user_dao.get_users_by_email(email_id=email_id)
@@ -23,7 +25,7 @@ def read_users_by_email_id(email_id: str):
     return db_user
 
 
-@app.get("/user/", response_model=us.User)
+@user_router.get("/user/", response_model=us.User)
 def read_users_by_username(username: str):
 
     db_user = user_dao.get_user_by_user_name(user_name=username)
@@ -33,7 +35,7 @@ def read_users_by_username(username: str):
 
 
 # delete
-@app.delete("/user/")
+@user_router.delete("/user/")
 def delete_user_by_username(username: str):
 
     db_user = user_dao.get_user_by_user_name(user_name=username)
