@@ -9,7 +9,7 @@ def get_connection() -> Connection:
             host="localhost",
             port=3306,
             user="root",
-            password="admin123",
+            password="password",
             database="roommates",
             cursorclass=pymysql.cursors.Cursor,
             autocommit=True,
