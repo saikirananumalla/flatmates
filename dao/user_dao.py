@@ -1,4 +1,4 @@
-from schema import user_schema
+from model import user as us
 
 from config.db import get_connection
 
@@ -61,7 +61,7 @@ def get_users(skip: int = 0, limit: int = 100):
     return result_list
 
 
-def create_user(user: user_schema.User):
+def create_user(user: us.User):
 
     create_user_stmt = (
         "INSERT INTO `user` (`username`, `email_id`, `phone`, `password`)"

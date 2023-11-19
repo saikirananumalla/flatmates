@@ -1,4 +1,4 @@
-create database roommates;
+create dao roommates;
 use roommates;
 
 create table flat(
