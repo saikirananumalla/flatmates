@@ -11,9 +11,6 @@
 #install fastapi
 `conda install -c conda-forge fastapi`
 
-#install sqlalchemy
-`conda install -c anaconda sqlalchemy`
-
 install pymysql
 `conda install -c anaconda pymysql`
 
