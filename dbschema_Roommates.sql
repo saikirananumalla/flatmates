@@ -31,6 +31,44 @@ foreign key (flat_code) references flat(flat_code) on update cascade on delete c
 foreign key (room_id) references room(room_id) on update cascade on delete set null
 );
 
+drop procedure if exists update_flatmate_room;
+delimiter $
+create procedure update_flatmate_room(username_p varchar(64), room_name_p varchar(64))
+begin
+	declare flat_code_var char(10);
+    declare room_id_var int;
+    select flat_code into flat_code_var from flatmate where username = username_p;
+    if flat_code_var is null then
+		signal sqlstate '45000' set message_text = 'user is not registered in any flat';
+	else
+		select room_id into room_id_var from room where flat_code = flat_code_var and name = room_name_p;
+        if room_id_var is null then
+			signal sqlstate '45000' set message_text = 'no such room in the flat';
+		else
+			update flatmate set room_id = room_id_var where username = username_p;
+		end if;
+	end if;
+end $
+delimiter ;
+
+
+drop procedure if exists get_flatmate;
+delimiter $
+create procedure get_flatmate(username_p varchar(64))
+begin
+	select username, flatmate.flat_code, room.name, join_date from flatmate left join room on flatmate.room_id = room.room_id where username = username_p;
+end $
+delimiter ;
+
+drop procedure if exists get_flatmates_by_flat_code;
+delimiter $
+create procedure get_flatmates_by_flat_code(flat_code_p varchar(64))
+begin
+	select username, flatmate.flat_code, room.name, join_date from flatmate left join room on flatmate.room_id = room.room_id where flatmate.flat_code = flat_code_p;
+end $
+delimiter ;
+
+
 create table belonging(
 belonging_id int not null primary key auto_increment,
 description varchar(255),
@@ -66,7 +104,8 @@ payment_id int not null,
 username varchar(64) not null,
 is_paid boolean not null default false,
 foreign key (payment_id) references payment(payment_id) on update cascade on delete cascade,
-foreign key (username) references user(username) on update cascade on delete cascade
+foreign key (username) references user(username) on update cascade on delete cascade,
+primary key (payment_id, username)
 );
 
 create table task(

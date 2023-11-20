@@ -11,7 +11,7 @@ def create_flat(flat_name: str):
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
 
-@flat_router.delete("/flat", tags=["flat"])
+@flat_router.delete("/flat/{flat_code}", tags=["flat"])
 def delete_flat(flat_code: str):
     try:
         success = flat_dao.delete_flat_by_code(flat_code=flat_code)
@@ -21,7 +21,7 @@ def delete_flat(flat_code: str):
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
 
-@flat_router.put("/flat", response_model=flat.Flat, tags=["flat"])
+@flat_router.put("/flat/{flat_code}", response_model=flat.Flat, tags=["flat"])
 def update_flat(flat: flat.Flat):
     try:
         result = flat_dao.update_flat_name(flat=flat)
@@ -32,7 +32,7 @@ def update_flat(flat: flat.Flat):
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
 
-@flat_router.get("/flat", response_model=flat.Flat, tags=["flat"])
+@flat_router.get("/flat/{flat_code}", response_model=flat.Flat, tags=["flat"])
 def get_flat(flat_code: str):
     try:
         result = flat_dao.get_flat(flat_code)
