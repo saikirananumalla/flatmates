@@ -2,10 +2,13 @@ from fastapi import FastAPI
 
 from controller.payment_controller import payment_router
 from controller.user_controller import user_router
+from controller.flat_controller import flat_router
 
 app = FastAPI()
 app.include_router(user_router)
 app.include_router(payment_router)
+app.include_router(flat_router)
+
 
 
 @app.get("/")

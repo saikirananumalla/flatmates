@@ -3,7 +3,7 @@
 #install condo for managing python packages
 
 #create virtual env
-`conda create -n dbms python=3.7.1`
+`conda create -n dbms`
 
 #activate
 `conda activate dbms`
