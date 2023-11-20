@@ -8,8 +8,8 @@ user_router = APIRouter()
 
 
 @user_router.post("/user/", response_model=us.User, tags=["user"])
-def create_user(user: us.User):
-    db_user = user_dao.get_user_by_user_name(user_name=user.user_name)
+def create_user(user: us.UserWithPassword):
+    db_user = user_dao.get_user_by_user_name(username=user.username)
     if db_user:
         raise HTTPException(status_code=400, detail="User name not available")
     return user_dao.create_user(user=user)

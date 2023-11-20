@@ -53,9 +53,9 @@ def create_user(user: us.UserWithPassword):
         " VALUES (%s, %s, %s, %s)"
     )
     cur.execute(
-        create_user_stmt, (user.user_name, user.email_id, user.phone, hashed_password)
+        create_user_stmt, (user.username, user.email_id, user.phone, hashed_password)
     )
-    return get_user_by_user_name(user_name=user.user_name)
+    return get_user_by_user_name(username=user.username)
 
 
 def delete_user_by_user_name(username: str):
