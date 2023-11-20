@@ -86,6 +86,77 @@ foreign key (username) references flatmate(username) on update cascade on delete
 primary key (belonging_id, username)
 );
 
+drop procedure if exists get_belonging;
+delimiter $
+create procedure get_belonging(name_p varchar(255), flat_code_p char(10))
+begin
+    select belonging.*, group_concat(username) from belonging left join belonging_owner on belonging.belonging_id = belonging_owner.belonging_id
+		where flat_code = flat_code_p and name = name_p group by belonging_id, description, name, flat_code;
+end $
+delimiter ;
+
+
+drop procedure if exists get_belonging_by_flat;
+delimiter $
+create procedure get_belonging_by_flat(flat_code_p char(10))
+begin
+    select belonging.*, group_concat(username) from belonging left join belonging_owner on belonging.belonging_id = belonging_owner.belonging_id
+		where flat_code = flat_code_p group by belonging_id, description, name, flat_code;
+end $
+delimiter ;
+
+
+drop procedure if exists insert_belonging;
+delimiter $
+create procedure insert_belonging(description_p varchar(255), name_p varchar(255), flat_code_p char(10))
+begin
+	insert into belonging(description, name, flat_code) values (description_p, name_p, flat_code_p);
+    select belonging_id from belonging where name = name_p and flat_code = flat_code_p;
+end $
+delimiter ;
+
+drop procedure if exists update_belonging;
+delimiter $
+create procedure update_belonging(belonging_id_p int, description_p varchar(255), name_p varchar(255))
+begin
+	declare bid int;
+    select belonging_id into bid from belonging where belonging_id = belonging_id_p;
+    if bid is null then
+		signal sqlstate '45000' set message_text = 'belonging_id does not exist';
+	end if;
+	update belonging set description = description_p, name = name_p where belonging_id = belonging_id_p;
+    select * from belonging where belonging_id = belonging_id_p;
+end $
+delimiter ;
+
+drop procedure if exists add_belonging_owner;
+delimiter $
+create procedure add_belonging_owner(belonging_id_p int, username_p varchar(64))
+begin
+	declare flat_c1 char(10);
+    declare flat_c2 char(10);
+    
+    select distinct flat_code into flat_c1 from belonging where belonging_id = belonging_id;
+    select distinct flat_code into flat_c2 from flatmate where username = username_p;
+    
+    if flat_c1 is null or flat_c2 is null or flat_c1 != flat_c2 then
+		signal sqlstate '45000' set message_text = 'invalid request the belonging and user are not of same flat';
+    end if;
+    insert into belonging_owner values (belonging_id_p, username_p);
+end $
+delimiter ;
+
+
+drop procedure if exists drop_belonging_owners;
+delimiter $
+create procedure drop_belonging_owners(belonging_id_p int)
+begin
+	delete from belonging_owner where belonging_id = belonging_id_p;
+end $
+delimiter ;
+
+
+
 create table payment(
 payment_id int not null primary key auto_increment,
 name varchar(255) not null,

@@ -23,7 +23,7 @@ def leave_flat(username: str):
         raise HTTPException(status_code=400, detail=str(ve))
 
 @flatmate_router.put("/flatmate/{username}", response_model=flatmate.FlatmateWithRoomName, tags=["flatmate"])
-def update_flatmate_room(username: int, room_name: str):
+def update_flatmate_room(username: str, room_name: str):
     try:
         result = flatmate_dao.update_room(username, room_name)
         if result is None:
@@ -36,7 +36,6 @@ def update_flatmate_room(username: int, room_name: str):
 @flatmate_router.get("/flatmate/{username}", response_model=flatmate.FlatmateWithRoomName, tags=["flatmate"])
 def get_flatmate(username: str):
     try:
-        print(username)
         result = flatmate_dao.get_flatmate(username)
         
         if result is None:
