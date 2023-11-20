@@ -1,3 +1,5 @@
+from pydantic.schema import List
+
 from model import payment as pm
 from dao import payment_dao
 from fastapi import APIRouter
@@ -8,14 +10,26 @@ payment_router = APIRouter()
 
 
 @payment_router.post("/payment/", response_model=str)
-def create_user(payment_details: pm.PaymentDetails):
+def create_payment(payment_details: pm.PaymentDetails):
     payment_result = payment_dao.create_payment(p=payment_details)
     return payment_result
 
 
-@payment_router.get("/payment_by_id", response_model=GetPayment)
-def get_payment_by_id(payment_id: int):
-    payments_result = payment_dao.get_payment_details_by_id(p_id=payment_id)
+@payment_router.get("/payment_by_flat", response_model=List[GetPayment])
+def get_payment_by_flat(flat_code: str):
+    payments_result = payment_dao.get_payment_details_by_flat_code(flat_code=flat_code)
+    return payments_result
+
+
+@payment_router.get("/payment_by_username", response_model=List[GetPayment])
+def get_payment_by_username(username: str):
+    payments_result = payment_dao.get_payment_details_by_username(username=username)
+    return payments_result
+
+
+@payment_router.get("/payments_involve_username", response_model=List[GetPayment])
+def get_payment_by_username(username: str):
+    payments_result = payment_dao.get_payment_details_involve_username(username=username)
     return payments_result
 
 

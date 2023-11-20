@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import pymysql
+from pydantic.schema import List
 
 from model.payment import PaymentDetails, GetPayment, UpdatePayment
 from config.db import get_connection
@@ -62,15 +63,12 @@ def create_payment(p: PaymentDetails):
         print("Could not create a payment error is " + str(pe))
 
 
-def get_payment_details_by_id(p_id: int) -> GetPayment:
+def get_payment_details_by_flat_code(flat_code: str) -> List[GetPayment]:
 
-    # Initializing the results for the object
-    result = None
-    affected_users = None
-
+    result = []
     get_payment_details_stmt = (
         "SELECT payment_id, flat_code, name, paid_by, amount_paid,"
-        " payment_type, payment_date FROM payment where payment_id=%s"
+        " payment_type, payment_date FROM payment where flat_code=%s"
     )
     get_affected_flatmates_for_payment_stmt = (
         "select username, is_paid from payment_affected_users where payment_id=%s"
@@ -79,30 +77,120 @@ def get_payment_details_by_id(p_id: int) -> GetPayment:
     try:
         cur.execute(
             get_payment_details_stmt,
-            str(p_id),
+            str(flat_code),
         )
-        result = cur.fetchone()
-        cur.execute(
-            get_affected_flatmates_for_payment_stmt,
-            p_id,
-        )
-        affected_users = cur.fetchall()
-        affected_users = [(arr[0], arr[1]) for arr in affected_users]
+        payment_result = cur.fetchall()
+
+        for payment in payment_result:
+            cur.execute(
+                get_affected_flatmates_for_payment_stmt,
+                payment[0],
+            )
+            affected_users = cur.fetchall()
+            affected_users = [(arr[0], arr[1]) for arr in affected_users]
+            ret = GetPayment(
+                payment_id=payment[0],
+                flat_code=payment[1],
+                payment_name=payment[2],
+                payee=payment[3],
+                paid_amount=payment[4],
+                payment_type=payment[5],
+                payment_date=str(payment[6]),
+                affected_flatmates=affected_users,
+            )
+            result.append(ret)
     except pymysql.Error as pe:
 
         print("Could not retrieve payment details " + str(pe))
 
-    ret = GetPayment(
-        payment_id=result[0],
-        flat_code=result[1],
-        payment_name=result[2],
-        payee=result[3],
-        paid_amount=result[4],
-        payment_type=result[5],
-        payment_date=str(result[6]),
-        affected_flatmates=affected_users,
+    return result
+
+
+def get_payment_details_by_username(username: str) -> List[GetPayment]:
+
+    result = []
+    get_payment_details_stmt = (
+        "SELECT payment_id, flat_code, name, paid_by, amount_paid,"
+        " payment_type, payment_date FROM payment where paid_by=%s"
     )
-    return ret
+    get_affected_flatmates_for_payment_stmt = (
+        "select username, is_paid from payment_affected_users where payment_id=%s"
+    )
+
+    try:
+        cur.execute(
+            get_payment_details_stmt,
+            str(username),
+        )
+        payment_result = cur.fetchall()
+
+        for payment in payment_result:
+            cur.execute(
+                get_affected_flatmates_for_payment_stmt,
+                payment[0],
+            )
+            affected_users = cur.fetchall()
+            affected_users = [(arr[0], arr[1]) for arr in affected_users]
+            ret = GetPayment(
+                payment_id=payment[0],
+                flat_code=payment[1],
+                payment_name=payment[2],
+                payee=payment[3],
+                paid_amount=payment[4],
+                payment_type=payment[5],
+                payment_date=str(payment[6]),
+                affected_flatmates=affected_users,
+            )
+            result.append(ret)
+    except pymysql.Error as pe:
+
+        print("Could not retrieve payment details " + str(pe))
+
+    return result
+
+
+def get_payment_details_involve_username(username: str) -> List[GetPayment]:
+
+    result = []
+    get_payment_details_stmt = (
+        "SELECT payment_id, flat_code, name, paid_by, amount_paid,"
+        " payment_type, payment_date FROM payment where payment_id=%s"
+    )
+    get_affected_flatmates_for_payment_stmt = (
+        "select payment_id from payment_affected_users where username=%s"
+    )
+
+    try:
+        cur.execute(
+            get_affected_flatmates_for_payment_stmt,
+            str(username),
+        )
+        payment_result = cur.fetchall()
+
+        for payment in payment_result:
+            cur.execute(
+                get_payment_details_stmt,
+                payment[0],
+            )
+            payment_det = cur.fetchone()
+            print(payment_det)
+
+            ret = GetPayment(
+                payment_id=payment_det[0],
+                flat_code=payment_det[1],
+                payment_name=payment_det[2],
+                payee=payment_det[3],
+                paid_amount=payment_det[4],
+                payment_type=payment_det[5],
+                payment_date=str(payment_det[6]),
+                affected_flatmates=[],
+            )
+            result.append(ret)
+    except pymysql.Error as pe:
+
+        print("Could not retrieve payment details " + str(pe))
+
+    return result
 
 
 def update_payment_by_user(p_id: int, username: str):
