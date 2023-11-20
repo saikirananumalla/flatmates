@@ -1,84 +1,66 @@
 from model import user as us
+import hashlib
 
 from config.db import get_connection
 
 cur = get_connection().cursor()
 
 
-def get_user_by_user_name(user_name: str):
+def get_user_by_user_name(username: str):
 
     get_by_username_stmt = (
-        "SELECT username, email_id, phone, password FROM user WHERE user.username=%s"
+        "SELECT username, email_id, phone FROM user WHERE username=%s"
     )
-    cur.execute(get_by_username_stmt, user_name)
-    result = cur.fetchall()
+    cur.execute(get_by_username_stmt, (username,))
+    result = cur.fetchone()
 
-    if len(result) == 0:
-        return None
+    if not result:
+            return None
 
-    result_dict = {
-        "user_name": result[0][0],
-        "email_id": result[0][1],
-        "phone": result[0][2],
-        "password": result[0][3],
-    }
-    return result_dict
+    user_model = us.User(
+                username=result[0],
+                email_id=result[1],
+                phone=result[2]
+            )
+    return user_model
 
 
-def get_users_by_email(email_id: str):
+def get_user_by_email(email_id: str):
 
     get_user_by_email_stmt = (
         "SELECT username, email_id, phone, password FROM user WHERE user.email_id=%s"
     )
     cur.execute(get_user_by_email_stmt, email_id)
-    result = cur.fetchall()
-    result_list = []
-    for i in range(len(result)):
-        result_dict_temp = {
-            "user_name": result[i][0],
-            "email_id": result[i][1],
-            "phone": result[i][2],
-            "password": result[i][3],
-        }
-        result_list.append(result_dict_temp)
-    return result_list
+    result = cur.fetchone()
+    if not result:
+            return None
+
+    user_model = us.User(
+                username=result[0],
+                email_id=result[1],
+                phone=result[2]
+            )
+    return user_model
 
 
-def get_users(skip: int = 0, limit: int = 100):
-
-    get_users_stmt = "SELECT username, email_id, phone, password FROM user LIMIT %S, %S"
-    cur.execute(get_users_stmt, (skip, limit))
-    result = cur.fetchall()
-    result_list = []
-    for i in range(len(result)):
-        result_dict_temp = {
-            "user_name": result[i][0],
-            "email_id": result[i][1],
-            "phone": result[i][2],
-            "password": result[i][3],
-        }
-        result_list.append(result_dict_temp)
-    return result_list
-
-
-def create_user(user: us.User):
+def create_user(user: us.UserWithPassword):
+    
+    # Hash the password using SHA-256
+    hashed_password = hashlib.sha256(user.password.encode('utf-8')).hexdigest()
 
     create_user_stmt = (
         "INSERT INTO `user` (`username`, `email_id`, `phone`, `password`)"
         " VALUES (%s, %s, %s, %s)"
     )
     cur.execute(
-        create_user_stmt, (user.user_name, user.email_id, user.phone, user.password)
+        create_user_stmt, (user.username, user.email_id, user.phone, hashed_password)
     )
-    get_connection().commit()
-    print(cur.fetchall())
-    result = get_user_by_user_name(user_name=user.user_name)
-    return result
+    return get_user_by_user_name(username=user.username)
 
 
-def delete_user_by_user_name(user_name: str):
+def delete_user_by_user_name(username: str):
 
     delete_by_username_stmt = "DELETE FROM user WHERE user.username=%s"
-    cur.execute(delete_by_username_stmt, user_name)
-    get_connection().commit()
-    return user_name
+    cur.execute(delete_by_username_stmt, username)
+    return cur.rowcount > 0
+    
