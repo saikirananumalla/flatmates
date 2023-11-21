@@ -1,15 +1,22 @@
 from pydantic import BaseModel
+from pydantic.schema import List
+from typing import Optional
 
-class Belonging(BaseModel):
+class UpdateBelonging(BaseModel):
+    description: Optional[str]
+    name: str
+    owners: Optional[List[str]]
+
+class Belonging(UpdateBelonging):
+    flat_code: str
+    
+class BelongingStr(UpdateBelonging):
     belonging_id: int
-    description: str
+    description: Optional[str]
     name: str
     flat_code: str
-
-class BelongingOwner(BaseModel):
-    username: str
-
-class BelongingWithOwner(BaseModel):
-    belonging: Belonging
-    owners: List[BelongingOwner]
+    owners: Optional[str]
+    
+class BelongingWithId(Belonging):
+    belonging_id: int
     

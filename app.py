@@ -6,6 +6,7 @@ from controller.user_controller import user_router
 from controller.flat_controller import flat_router
 from controller.room_controller import room_router
 from controller.flatmate_controller import flatmate_router
+from controller.belonging_controller import belonging_router
 
 app = FastAPI()
 app.include_router(user_router)
@@ -19,3 +20,4 @@ app.include_router(task_router)
 @app.get("/")
 async def index(msg: str) -> str:
     return msg
+app.include_router(belonging_router)
