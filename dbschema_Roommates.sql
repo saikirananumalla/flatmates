@@ -120,6 +120,16 @@ foreign key (flat_code) references flat(flat_code) on update cascade on delete c
 constraint unq_task unique(task_name, current_assigned_to)
 );
 
+create table task_order(
+                           task_order_id int not null primary key auto_increment,
+                           seq_number int not null,
+                           username varchar(64) not null,
+                           task_id int not null,
+                           foreign key (task_id) references task(task_id) on update cascade on delete cascade,
+                           foreign key (username) references flatmate(username) on update cascade on delete cascade,
+                           constraint unq_task_sequence unique(task_id, username, seq_number)
+);
+
 -- write a trigger to populate current_assigned_to from task_order if a flatmate leaves
 drop trigger if exists update_task_when_flatmate_leaves;
 delimiter $
@@ -163,18 +173,6 @@ begin
 end $
 delimiter ;
 
-
-create table task_order(
-task_order_id int not null primary key auto_increment,
-seq_number int not null,
-username varchar(64) not null,
-task_id int not null,
-foreign key (task_id) references task(task_id) on update cascade on delete cascade,
-foreign key (username) references flatmate(username) on update cascade on delete cascade,
-constraint unq_task_sequence unique(task_id, username, seq_number)
-);
-
-
 -- write trigger to update sq no when a flatmate leaves
 drop trigger if exists update_task_seq_on_flatmate_delete;
 delimiter $
@@ -197,6 +195,24 @@ for each row
 	end $
 delimiter ;
 
+drop procedure if exists get_all_task_details_by_task_id;
+delimiter //
+create procedure get_all_task_details_by_task_id(in task_id_p int)
+begin
+	select * from task inner join task_order on task.task_id=task_order.task_id where task.task_id=task_id_p;
+end //
+delimiter ;
 
-		
-
+drop procedure if exists check_if_user_belongs_to_flat;
+delimiter //
+create procedure check_if_user_belongs_to_flat(in flat_code_p varchar(255), in username_p varchar(255))
+begin
+    declare username_var varchar(255) default null;
+    select username into username_var from flatmate where flatmate.flat_code=flat_code_p and username=username_p;
+    if username_var is not null then
+        select 1;
+    else
+        select 0;
+    end if;
+end //
+delimiter ;

@@ -28,7 +28,7 @@ def get_payment_by_username(username: str):
 
 
 @payment_router.get("/payments_involve_username", response_model=List[GetPayment])
-def get_payment_by_username(username: str):
+def get_payment_involve_username(username: str):
     payments_result = payment_dao.get_payment_details_involve_username(username=username)
     return payments_result
 
