@@ -270,7 +270,7 @@ drop procedure if exists get_all_task_details_by_task_id;
 delimiter //
 create procedure get_all_task_details_by_task_id(in task_id_p int)
 begin
-	select * from task inner join task_order on task.task_id=task_order.task_id where task.task_id=task_id_p;
+	select * from task left join task_order on task.task_id=task_order.task_id where task.task_id=task_id_p;
 end //
 delimiter ;
 
