@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from pydantic.schema import List, Tuple
+from typing import Optional
 
 
 class UpdatePayment(BaseModel):
@@ -7,15 +8,24 @@ class UpdatePayment(BaseModel):
     payment_name: str
     payee: str
     payment_date: str
-    affected_flatmates: List[str]
+    affected_flatmates: Optional[List[str]]
     paid_amount: float
     payment_type: str
     payment_id: int = None
 
 
-class PaymentDetails(UpdatePayment):
-
+class PaymentDetails(BaseModel):
+    payment_name: str
+    payee: str
+    payment_date: str
+    affected_flatmates: Optional[List[str]]
+    paid_amount: float
+    payment_type: str
     flat_code: str
+    
+class PaymentDetailsWithId(PaymentDetails):
+    
+    payment_id: str
 
 
 class GetPayment(BaseModel):
@@ -27,4 +37,4 @@ class GetPayment(BaseModel):
     paid_amount: float
     payment_type: str
     payment_date: str
-    affected_flatmates: List[Tuple[str, str]]
+    affected_flatmates: Optional[List[Tuple[str, str]]]

@@ -15,7 +15,7 @@ def create_flatmate(mate: flatmate.FlatmateBase):
 
         return get_flatmate(mate.username)
     except MySQLError as e:
-        raise ValueError(f"Error joining flat: {e}")
+        raise ValueError(f"Error joining flat: pls check your inputs")
 
 def get_flatmate(username: str):
     try:
@@ -34,7 +34,7 @@ def get_flatmate(username: str):
 
         return flatmate_model
     except MySQLError as e:
-        raise ValueError(f"Error getting flatmate details: {e}")
+        raise ValueError(f"Error getting flatmate details: pls check your inputs")
     
 
 def get_flatmates_by_flat(flat_code: str):
@@ -61,7 +61,7 @@ def get_flatmates_by_flat(flat_code: str):
             
         return result_models
     except MySQLError as e:
-        raise ValueError(f"Error getting flatmates by flat: {e}")
+        raise ValueError(f"Error getting flatmates by flat: pls check your inputs")
 
 
 def update_room(username: str, room_name: str):
@@ -72,7 +72,7 @@ def update_room(username: str, room_name: str):
 
         return get_flatmate(username)
     except MySQLError as e:
-        raise ValueError(f"Error updating room for flatmate: {e}")
+        raise ValueError(f"Error updating room for flatmate: pls check your inputs")
 
 def delete_flatmate(username: str):
     try:
@@ -83,4 +83,4 @@ def delete_flatmate(username: str):
 
         return cur.rowcount > 0
     except MySQLError as e:
-        raise ValueError(f"Error deleting flatmate: {e}")
+        raise ValueError(f"Error deleting flatmate: pls check your inputs")

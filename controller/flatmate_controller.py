@@ -50,6 +50,8 @@ def get_flatmate(username: str):
 def get_flatmates_in_flat(flat_code: str):
     try:
         result = flatmate_dao.get_flatmates_by_flat(flat_code)
+        if result is None:
+            raise HTTPException(status_code=404, detail="flat does not exist")
         return result
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
