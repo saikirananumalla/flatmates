@@ -3,7 +3,7 @@ from datetime import datetime
 import pymysql
 from pydantic.schema import List
 
-from model.payment import PaymentDetails, GetPayment, UpdatePayment
+from model.payment import PaymentDetails, GetPayment, UpdatePayment, PaymentDetailsWithId
 from config.db import get_connection
 
 cur = get_connection().cursor()
@@ -27,13 +27,12 @@ def create_payment(p: PaymentDetails):
 
     try:
         # insert into the payments table.
-        paid_date = datetime.now()
         cur.execute(
             create_payment_stmt,
             (
                 p.payment_name,
                 p.paid_amount,
-                paid_date,
+                p.payment_date,
                 p.payment_type,
                 p.payee,
                 p.flat_code,
@@ -43,24 +42,38 @@ def create_payment(p: PaymentDetails):
         # Get the payment_id for the newly inserted payment.
         cur.execute(
             get_payment_id_stmt,
-            (p.payment_name, paid_date.date(), p.payee),
+            (p.payment_name, p.payment_date, p.payee),
         )
         payment_id = cur.fetchone()
+        
+        try:
 
-        # insert into the payment_affected_users table.
-        for username in p.affected_flatmates:
+            # insert into the payment_affected_users table.
+            for username in p.affected_flatmates:
 
-            cur.execute(
-                payment_affected_stmt,
-                (
-                    payment_id,
-                    username,
-                    False,
-                ),
-            )
-        return str(payment_id)
+                cur.execute(
+                    payment_affected_stmt,
+                    (
+                        payment_id,
+                        username,
+                        False,
+                    ),
+                )
+        except MySQLError as e:
+            delete_payment(payment_id)
+            raise ValueError(f"Error creating payment: pls check affected flatmates")
+        return PaymentDetailsWithId(
+            payment_name=p.payment_name,
+            payee=p.payee,
+            payment_date=p.payment_date,
+            affected_flatmates=p.affected_flatmates,
+            paid_amount=p.paid_amount,
+            payment_type=p.payment_type,
+            flat_code=p.flat_code,
+            payment_id=payment_id[0])
+        
     except pymysql.Error as pe:
-        print("Could not create a payment error is " + str(pe))
+        raise ValueError("Could not create a payment " + "pls check your inputs"  + str(pe))
 
 
 def get_payment_details_by_flat_code(flat_code: str) -> List[GetPayment]:
@@ -101,7 +114,7 @@ def get_payment_details_by_flat_code(flat_code: str) -> List[GetPayment]:
             result.append(ret)
     except pymysql.Error as pe:
 
-        print("Could not retrieve payment details " + str(pe))
+        raise ValueError("Could not retrieve payment details pls check your inputs")
 
     return result
 
@@ -144,7 +157,7 @@ def get_payment_details_by_username(username: str) -> List[GetPayment]:
             result.append(ret)
     except pymysql.Error as pe:
 
-        print("Could not retrieve payment details " + str(pe))
+        raise ValueError("Could not retrieve payment details pls check your inputs")
 
     return result
 
@@ -173,7 +186,6 @@ def get_payment_details_involve_username(username: str) -> List[GetPayment]:
                 payment[0],
             )
             payment_det = cur.fetchone()
-            print(payment_det)
 
             ret = GetPayment(
                 payment_id=payment_det[0],
@@ -188,7 +200,7 @@ def get_payment_details_involve_username(username: str) -> List[GetPayment]:
             result.append(ret)
     except pymysql.Error as pe:
 
-        print("Could not retrieve payment details " + str(pe))
+        raise ValueError("Could not retrieve payment details pls check your inputs")
 
     return result
 
@@ -204,10 +216,10 @@ def update_payment_by_user(p_id: int, username: str):
             update_payment_stmt,
             (str(p_id), username),
         )
-        return True
+        return cur.rowcount > 0
     except pymysql.Error as pe:
 
-        print("Could not retrieve payment details " + str(pe))
+        raise ValueError("Could not retrieve payment details pls check your inputs")
 
 
 def update_payment_details(payment_details: UpdatePayment):
@@ -217,6 +229,8 @@ def update_payment_details(payment_details: UpdatePayment):
                            " payment_type=%s "
                            "where payment_id=%s")
 
+    drop_affected_user_stmt = ("delete from payment_affected_users where payment_id=%s")
+    
     update_affected_user_stmt = (
         "INSERT INTO `payment_affected_users` (`payment_id`, `username`, `is_paid`)"
         " VALUES (%s, %s, %s)"
@@ -228,6 +242,9 @@ def update_payment_details(payment_details: UpdatePayment):
             (payment_details.payment_name, payment_details.payee, payment_details.payment_date,
              payment_details.paid_amount, payment_details.payment_type, payment_details.payment_id),
         )
+        
+        cur.execute(drop_affected_user_stmt, (payment_details.payment_id))
+        
         for username in payment_details.affected_flatmates:
 
             cur.execute(
@@ -239,10 +256,10 @@ def update_payment_details(payment_details: UpdatePayment):
                 ),
             )
 
-        return True
+        return payment_details
     except pymysql.Error as pe:
 
-        print("Could not retrieve payment details " + str(pe))
+        raise ValueError("Could not retrieve payment details pls check your inputs")
 
 
 def delete_payment(p_id: int):
@@ -260,7 +277,7 @@ def delete_payment(p_id: int):
             delete_payment_affected_users,
             p_id,
         )
-        return True
+        return cur.rowcount > 0
     except pymysql.Error as pe:
 
-        print("Could not create a payment error is " + str(pe))
+        raise ValueError("Could not create a payment error pls check your inputs")

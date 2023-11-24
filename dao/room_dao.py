@@ -13,7 +13,7 @@ def create_room(room: room.RoomWithoutId):
 
         return get_room(room.name, room.flat_code)
     except MySQLError as e:
-        raise ValueError(f"Error creating room: {e}")
+        raise ValueError(f"Error creating room: pls check your inputs")
 
 def get_room(name: str, flat_code: str):
     try:
@@ -34,7 +34,7 @@ def get_room(name: str, flat_code: str):
 
         return room_model
     except MySQLError as e:
-        raise ValueError(f"Error getting room: {e}")
+        raise ValueError(f"Error getting room: pls check your inputs")
     
 
 def get_rooms_by_flat(flat_code: str):
@@ -60,7 +60,7 @@ def get_rooms_by_flat(flat_code: str):
             
         return result_models
     except MySQLError as e:
-        raise ValueError(f"Error getting room by flat: {e}")
+        raise ValueError(f"Error getting room by flat: pls check your inputs")
 
 
 def update_room_name(room_id: int, name: str):
@@ -72,7 +72,7 @@ def update_room_name(room_id: int, name: str):
 
         return get_room_by_id(room_id)
     except MySQLError as e:
-        raise ValueError(f"Error updating room: {e}")
+        raise ValueError(f"Error updating room: pls check your inputs")
 
 def delete_room(room_id: str):
     try:
@@ -83,7 +83,7 @@ def delete_room(room_id: str):
 
         return cur.rowcount > 0
     except MySQLError as e:
-        raise ValueError(f"Error deleting flat: {e}")
+        raise ValueError(f"Error deleting flat: pls check your inputs")
 
 
 
@@ -107,4 +107,4 @@ def get_room_by_id(room_id: int):
         print(room_model)
         return room_model
     except MySQLError as e:
-        raise ValueError(f"Error getting room: {e}")
+        raise ValueError(f"Error getting room: pls check your inputs")

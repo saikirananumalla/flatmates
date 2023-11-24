@@ -2,7 +2,6 @@ from model import room
 from dao import room_dao
 from fastapi import APIRouter, HTTPException
 from pydantic.schema import List
-
 room_router = APIRouter()
 
 @room_router.post("/room", response_model=room.Room, tags=["room"])
@@ -49,6 +48,8 @@ def get_room(name: str, flat_code: str):
 def get_rooms_in_flat(flat_code: str):
     try:
         result = room_dao.get_rooms_by_flat(flat_code)
+        if result is None:
+            raise HTTPException(status_code=404, detail="Flat not found")
         return result
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))

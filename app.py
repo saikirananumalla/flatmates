@@ -15,9 +15,3 @@ app.include_router(flat_router)
 app.include_router(room_router)
 app.include_router(flatmate_router)
 app.include_router(task_router)
-
-
-@app.get("/")
-async def index(msg: str) -> str:
-    return msg
-app.include_router(belonging_router)

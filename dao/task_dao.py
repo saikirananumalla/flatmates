@@ -15,16 +15,14 @@ def create_task(task_details: CreateTask):
     # Date validation.
     task_date = datetime.datetime.strptime(task_details.task_date, "%Y-%m-%d")
     if task_date < datetime.datetime.now():
-        print("Invalid task date, cannot be less than today")
-        raise Exception("Invalid Date")
+        raise ValueError("Invalid Date")
 
     # Check if the first person in the list is a valid member of the flat.
     cur.callproc("check_if_user_belongs_to_flat", (task_details.flat_code,
                                                    task_details.username_sequence[0]))
     first_user_exists = cur.fetchone()
     if not first_user_exists[0]:
-        print("Invalid username, does not belong to the flat")
-        raise Exception("Invalid username")
+        raise ValueError("Invalid username")
 
     # Inserting the task into the task table. Adding the first person as current_assigned_to.
     create_task_stmt = (
@@ -44,10 +42,9 @@ def create_task(task_details: CreateTask):
 
         update_task_order(username_sequence=task_details.username_sequence,
                           flat_code=task_details.flat_code, task_id=task_id)
-    except pymysql.Error as pe:
-
+    except MySQLError as e:
         delete_task(task_details.task_name, task_details.flat_code)
-        raise pe
+        raise ValueError(f"Error updating task: pls check your inputs")
 
     return get_task_details(task_id)
 
@@ -57,8 +54,8 @@ def get_task(task_name: str, flat_code: str) -> GetTask:
     try:
         result_task_id = get_task_id_from_name_flat_code(task_name, flat_code)
         return get_task_details(result_task_id)
-    except pymysql.Error as pe:
-        raise pe
+    except MySQLError as e:
+        raise ValueError(f"Error getting task: pls check your inputs")
 
 
 def update_task(update_task_details: UpdateTask):
@@ -66,36 +63,46 @@ def update_task(update_task_details: UpdateTask):
     # Delete all the existing task orders.
     delete_task_order_by_task_id(update_task_details.task_id)
 
-    # Update the task row.
-    update_task_details_stmt = (
-        "update task set task_name=%s, task_date=%s, frequency=%s where task_id=%s"
-    )
-    cur.execute(update_task_details_stmt, (update_task_details.task_name,
-                                           update_task_details.task_date,
-                                           update_task_details.frequency,
-                                           update_task_details.task_id))
-
     # Get flat_code for input validation.
     get_flat_code_stmt = (
         "select flat_code from task where task_id=%s"
     )
     cur.execute(get_flat_code_stmt, update_task_details.task_id)
-    flat_code = cur.fetchone()[0]
+    flat_code = cur.fetchone()
+    
+    if flat_code is None:
+        raise ValueError("Task Id does not exist")
+    
+    flat_code=flat_code[0]  
+      
+    # Check if the first person in the list is a valid member of the flat.
+    cur.callproc("check_if_user_belongs_to_flat", (flat_code,
+                                                   update_task_details.username_sequence[0]))
+    first_user_exists = cur.fetchone()
+    if not first_user_exists[0]:
+        raise ValueError("Invalid username")
+
+    # Update the task row.
+    update_task_details_stmt = (
+        "update task set task_name=%s, task_date=%s, frequency=%s, current_assigned_to=%s where task_id=%s"
+    )
+    cur.execute(update_task_details_stmt, (update_task_details.task_name,
+                                           update_task_details.task_date,
+                                           update_task_details.frequency,
+                                           update_task_details.username_sequence[0],
+                                           update_task_details.task_id))
 
     # Call update task orders for the new order.
     try:
         update_task_order(username_sequence=update_task_details.username_sequence,
                           flat_code=flat_code, task_id=update_task_details.task_id)
-    except pymysql.Error as pe:
-        raise pe
+    except MySQLError as e:
+        raise ValueError(f"Error creating task: pls check your inputs")
 
     return get_task_details(int(update_task_details.task_id))
 
 
-def delete_task(task_name: str, flat_code: str):
-
-    # get the task id from the task name and the flat code.
-    task_id = get_task(task_name, flat_code).task_id
+def delete_task(task_id: int):
 
     # Delete the task row in the task table.
     delete_task_stmt = (
@@ -104,14 +111,17 @@ def delete_task(task_name: str, flat_code: str):
     cur.execute(delete_task_stmt, task_id)
 
     # Delete the subsequent rows in the task order table.
-    delete_task_order_by_task_id(task_id=task_id)
-    return "OK"
+    # delete_task_order_by_task_id(task_id=task_id)
+    return cur.rowcount > 0
 
 
 def get_task_details(task_id: int) -> GetTask:
 
     cur.callproc("get_all_task_details_by_task_id", (str(task_id),))
     result = cur.fetchall()
+    
+    if len(result)==0:
+        raise ValueError("Task does not exist")
 
     # task.task_id, task_name, frequency, current_assigned_to, task_date, flat_code,
     # task_order_id, seq_number, username is the order of the result.
@@ -119,7 +129,8 @@ def get_task_details(task_id: int) -> GetTask:
     result_list = []
 
     for row in result:
-        temp_dict[row[7]] = row[8]
+        if row[7] is not None and row[8] is not None:
+            temp_dict[row[7]] = row[8]
     for i in sorted(temp_dict.keys()):
         result_list.append(temp_dict[i])
 
@@ -149,8 +160,7 @@ def update_task_order(username_sequence: List[str], flat_code: str, task_id: str
         user_exists = cur.fetchone()
 
         if not user_exists[0]:
-            print("Invalid username, does not belong to the flat")
-            raise Exception("Invalid username")
+            raise ValueError("Invalid username")
 
         cur.execute(insert_task_order_stmt, (count, username, task_id))
         count = count + 1
@@ -170,5 +180,9 @@ def get_task_id_from_name_flat_code(task_name: str, flat_code: str):
     cur.execute(get_task_stmt,
                 (task_name, flat_code))
     result_task_id = cur.fetchone()
+    
+    if result_task_id is None:
+        raise ValueError("Task does not exist")
+    
     task_id = result_task_id[0]
     return task_id

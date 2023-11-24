@@ -15,7 +15,7 @@ def create_flat(name: str):
 
         return get_flat(flat_code)
     except MySQLError as e:
-        raise ValueError(f"Error creating flat: {e}")
+        raise ValueError(f"Error creating flat: pls check your inputs")
 
 def get_flat(flat_code: str):
     try:
@@ -35,7 +35,7 @@ def get_flat(flat_code: str):
 
         return flat_model
     except MySQLError as e:
-        raise ValueError(f"Error getting flat: {e}")
+        raise ValueError(f"Error getting flat: pls check your inputs")
 
 def update_flat_name(flat: flat.Flat):
     try:
@@ -47,7 +47,7 @@ def update_flat_name(flat: flat.Flat):
 
         return get_flat(flat_code)
     except MySQLError as e:
-        raise ValueError(f"Error updating flat: {e}")
+        raise ValueError(f"Error updating flat: pls check your inputs")
 
 def delete_flat_by_code(flat_code: str) -> bool:
     try:
@@ -58,4 +58,4 @@ def delete_flat_by_code(flat_code: str) -> bool:
 
         return cur.rowcount > 0
     except MySQLError as e:
-        raise ValueError(f"Error deleting flat: {e}")
+        raise ValueError(f"Error deleting flat: pls check your inputs")

@@ -26,7 +26,7 @@ def create_belonging(belonging: belonging.Belonging):
         return get_belonging(belonging.name, belonging.flat_code)
         
     except MySQLError as e:
-        raise ValueError(f"Error creating belonging: {e}")
+        raise ValueError(f"Error creating belonging: pls check your inputs")
 
 def get_belonging(name: str, flat_code: str):
     try:
@@ -48,7 +48,7 @@ def get_belonging(name: str, flat_code: str):
 
         
     except MySQLError as e:
-        raise ValueError(f"Error getting belonging details: {e}")
+        raise ValueError(f"Error getting belonging details: pls check your inputs")
     
 
 def get_belonging_by_id(belonging_id: int):
@@ -63,7 +63,7 @@ def get_belonging_by_id(belonging_id: int):
 
         
     except MySQLError as e:
-        raise ValueError(f"Error getting belonging details: {e}")
+        raise ValueError(f"Error getting belonging details: pls check your inputs")
     
 
 def get_belongings_by_flat(flat_code: str):
@@ -91,7 +91,7 @@ def get_belongings_by_flat(flat_code: str):
             
         return result_models
     except MySQLError as e:
-        raise ValueError(f"Error getting belongings by flat: {e}")
+        raise ValueError(f"Error getting belongings by flat: pls check your inputs")
 
 
 def update_belonging(belonging_id: int, belonging: belonging.UpdateBelonging):
@@ -107,7 +107,7 @@ def update_belonging(belonging_id: int, belonging: belonging.UpdateBelonging):
         return get_belonging_by_id(belonging_id)
         
     except MySQLError as e:
-        raise ValueError(f"Error updating belonging: {e}")
+        raise ValueError(f"Error updating belonging: pls check your inputs")
 
 def delete_belonging(belonging_id: int):
     try:
@@ -118,4 +118,4 @@ def delete_belonging(belonging_id: int):
 
         return cur.rowcount > 0
     except MySQLError as e:
-        raise ValueError(f"Error deleting belonging: {e}")
+        raise ValueError(f"Error deleting belonging: pls check your inputs")
