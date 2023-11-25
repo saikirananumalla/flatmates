@@ -26,6 +26,27 @@ def get_user_by_user_name(username: str):
         return user_model
     except MySQLError as e:
         raise ValueError(f"Error getting user: pls check your inputs")
+    
+def get(username: str):
+    try:
+        get_by_username_stmt = (
+            "SELECT * FROM user WHERE username=%s"
+        )
+        cur.execute(get_by_username_stmt, (username,))
+        result = cur.fetchone()
+
+        if not result:
+            return None
+
+        user_model = us.UserWithPassword(
+                    username=result[0],
+                    email_id=result[1],
+                    phone=result[2],
+                    password=result[3]
+                )
+        return user_model
+    except MySQLError as e:
+        raise ValueError(f"Error getting user: pls check your inputs")
 
 
 def get_user_by_email(email_id: str):
