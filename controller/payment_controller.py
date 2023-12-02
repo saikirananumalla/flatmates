@@ -47,10 +47,10 @@ def get_payment_involve_username(username: str):
 
 
 @payment_router.patch("/update_payment_by_user", response_model=str, tags=["payments"])
-def update_payment_by_user(payment_id: int, username: str):
+def update_payment_by_user(payment_id: int, username: str, paid_status: bool):
     try:
         payments_result = payment_dao.update_payment_by_user(
-            p_id=payment_id, username=username
+            p_id=payment_id, username=username, paid_status=paid_status
         )
         return payments_result
     except ValueError as ve:

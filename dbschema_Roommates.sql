@@ -186,10 +186,12 @@ frequency enum('NO_REPEAT', 'DAILY', 'WEEKLY', 'MONTHLY') not null default 'WEEK
 current_assigned_to varchar(64),
 task_date date,
 flat_code char(10) not null,
+task_ended boolean default false,
 foreign key (current_assigned_to) references flatmate(username) on update cascade on delete set null,
 foreign key (flat_code) references flat(flat_code) on update cascade on delete cascade,
 constraint unq_task unique(task_name, current_assigned_to)
 );
+
 
 create table task_order(
                            task_order_id int not null primary key auto_increment,
@@ -227,18 +229,23 @@ delimiter ;
 -- procedure to get next assigned person
 drop procedure if exists next_flatmate_to_perform_task;
 delimiter $
-create procedure next_flatmate_to_perform_task(in task_id_p int, out username_out_p varchar(64))
+create procedure next_flatmate_to_perform_task(in task_id_p int)
 begin
 	declare cur_user_var varchar(64);
+    declare username_out_p varchar(64);
     declare seq_no_cur int;
     select current_assigned_to into cur_user_var from task where task_id = task_id_p;
     if cur_user_var is null then
 		select username into username_out_p from task_order where task_id = task_id_p and seq_number = 1;
+        select username_out_p;
     else
 		select seq_number into seq_no_cur from task_order where task_id = task_id_p and username = cur_user_var;
         select username into username_out_p from task_order where task_id = task_id_p and seq_number = seq_no_cur + 1;
         if username_out_p is null then
 			select username into username_out_p from task_order where task_id = task_id_p and seq_number = 1;
+            select username_out_p;
+		else
+			select username_out_p;
 		end if;
     end if;
 end $

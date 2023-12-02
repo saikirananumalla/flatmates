@@ -172,6 +172,9 @@ def get_payment_details_involve_username(username: str) -> List[GetPayment]:
     get_affected_flatmates_for_payment_stmt = (
         "select payment_id from payment_affected_users where username=%s"
     )
+    get_affected_flatmates_for_payment_stmt_by_id = (
+        "select username, is_paid from payment_affected_users where payment_id=%s"
+    )
 
     try:
         cur.execute(
@@ -186,6 +189,13 @@ def get_payment_details_involve_username(username: str) -> List[GetPayment]:
                 payment[0],
             )
             payment_det = cur.fetchone()
+            
+            cur.execute(
+                get_affected_flatmates_for_payment_stmt_by_id,
+                payment_det[0],
+            )
+            affected_users = cur.fetchall()
+            affected_users = [(arr[0], arr[1]) for arr in affected_users]
 
             ret = GetPayment(
                 payment_id=payment_det[0],
@@ -195,7 +205,7 @@ def get_payment_details_involve_username(username: str) -> List[GetPayment]:
                 paid_amount=payment_det[4],
                 payment_type=payment_det[5],
                 payment_date=str(payment_det[6]),
-                affected_flatmates=[],
+                affected_flatmates=affected_users,
             )
             result.append(ret)
     except pymysql.Error as pe:
@@ -205,16 +215,20 @@ def get_payment_details_involve_username(username: str) -> List[GetPayment]:
     return result
 
 
-def update_payment_by_user(p_id: int, username: str):
+def update_payment_by_user(p_id: int, username: str, paid_status:bool):
+    
+    paid = 0
+    if paid_status:
+        paid = 1
 
     update_payment_stmt = ("UPDATE payment_affected_users "
-                           "SET is_paid=1 "
+                           "SET is_paid=%s "
                            "where payment_id=%s and username=%s")
 
     try:
         cur.execute(
             update_payment_stmt,
-            (str(p_id), username),
+            (str(paid), str(p_id), username),
         )
         return cur.rowcount > 0
     except pymysql.Error as pe:
