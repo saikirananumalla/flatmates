@@ -1,7 +1,7 @@
-import datetime
 
 import pymysql
 from pydantic.schema import List
+from datetime import datetime, timedelta
 
 from model.task import CreateTask, UpdateTask, GetTask
 
@@ -11,40 +11,46 @@ cur = get_connection().cursor()
 
 
 def create_task(task_details: CreateTask):
+    
+    task_created = False
+    
+    try: 
+        
+        # Date validation.
+        task_date = datetime.strptime(task_details.task_date, "%Y-%m-%d")
+        if task_date < datetime.now():
+            raise ValueError("Invalid Date")
 
-    # Date validation.
-    task_date = datetime.datetime.strptime(task_details.task_date, "%Y-%m-%d")
-    if task_date < datetime.datetime.now():
-        raise ValueError("Invalid Date")
+        # Check if the first person in the list is a valid member of the flat.
+        cur.callproc("check_if_user_belongs_to_flat", (task_details.flat_code,
+                                                        task_details.username_sequence[0]))
+        first_user_exists = cur.fetchone()
+        if not first_user_exists[0]:
+            raise ValueError("Invalid username")
 
-    # Check if the first person in the list is a valid member of the flat.
-    cur.callproc("check_if_user_belongs_to_flat", (task_details.flat_code,
-                                                   task_details.username_sequence[0]))
-    first_user_exists = cur.fetchone()
-    if not first_user_exists[0]:
-        raise ValueError("Invalid username")
+        # Inserting the task into the task table. Adding the first person as current_assigned_to.
+        create_task_stmt = (
+            "insert into task (task_name, frequency, current_assigned_to, task_date, flat_code) "
+            "values (%s, %s, %s, %s, %s)"
+        )
+        cur.execute(create_task_stmt, (task_details.task_name, task_details.frequency,
+                                        task_details.username_sequence[0], task_details.task_date,
+                                        task_details.flat_code))
+        
+        task_created = True
 
-    # Inserting the task into the task table. Adding the first person as current_assigned_to.
-    create_task_stmt = (
-        "insert into task (task_name, frequency, current_assigned_to, task_date, flat_code) "
-        "values (%s, %s, %s, %s, %s)"
-    )
-    cur.execute(create_task_stmt, (task_details.task_name, task_details.frequency,
-                                   task_details.username_sequence[0], task_details.task_date,
-                                   task_details.flat_code))
+        # Retrieving the task_id from the task_name and the flat_code.
+        task_id = get_task_id_from_name_flat_code(task_details.task_name, task_details.flat_code)
 
-    # Retrieving the task_id from the task_name and the flat_code.
-    task_id = get_task_id_from_name_flat_code(task_details.task_name, task_details.flat_code)
-
-    # Updating the task order for all the usernames in the list.
-    # Should write failure fallback functions to undo the database.
-    try:
+        # Updating the task order for all the usernames in the list.
+        # Should write failure fallback functions to undo the database.
 
         update_task_order(username_sequence=task_details.username_sequence,
                           flat_code=task_details.flat_code, task_id=task_id)
-    except MySQLError as e:
-        delete_task(task_details.task_name, task_details.flat_code)
-        raise ValueError(f"Error updating task: pls check your inputs")
+    except Exception as e:
+        if task_created:
+            delete_task(task_details.task_name, task_details.flat_code)
+        raise ValueError(f"Error updating task: pls check your inputs" + str(e))
 
     return get_task_details(task_id)
 
@@ -102,17 +108,51 @@ def update_task(update_task_details: UpdateTask):
     return get_task_details(int(update_task_details.task_id))
 
 
+#other flatmates can also update a task as done by user
+def update_task_done_by_user(task_id: int):
+    try:
+        # Update the task row.
+        cur.callproc("next_flatmate_to_perform_task", (task_id,))
+        update_task_details_stmt = (
+            "update task set task_date=%s, task_ended=%s, current_assigned_to=%s where task_id=%s"
+        )
+        
+        res_user = cur.fetchone()
+        if res_user is None:
+            return None
+        
+        next_user = res_user[0]
+        
+        cur.execute("select frequency, task_date from task where task_id = %s", task_id)
+        res = cur.fetchone()
+        
+        task_ended = False
+        if (res[0] == 'NO_REPEAT'):
+            task_ended = True
+        
+        get_new_task_date = getDateFromFreq(res[0], str(res[1]))
+        cur.execute(update_task_details_stmt, (str(get_new_task_date), task_ended, next_user, str(task_id)))
+        
+        return get_task_details(task_id)
+    except Exception as e:
+        raise ValueError(f"Error updating task" + str(e))
+
+
 def delete_task(task_id: int):
 
-    # Delete the task row in the task table.
-    delete_task_stmt = (
-        "delete from task where task_id=%s"
-    )
-    cur.execute(delete_task_stmt, task_id)
+    try:
+        
+        # Delete the task row in the task table.
+        delete_task_stmt = (
+            "delete from task where task_id=%s"
+        )
+        cur.execute(delete_task_stmt, task_id)
 
-    # Delete the subsequent rows in the task order table.
-    # delete_task_order_by_task_id(task_id=task_id)
-    return cur.rowcount > 0
+        # Delete the subsequent rows in the task order table.
+        # delete_task_order_by_task_id(task_id=task_id)
+        return cur.rowcount > 0
+    except Exception as e:
+        raise ValueError("Task_id does not exist")
 
 
 def get_task_details(task_id: int) -> GetTask:
@@ -129,8 +169,8 @@ def get_task_details(task_id: int) -> GetTask:
     result_list = []
 
     for row in result:
-        if row[7] is not None and row[8] is not None:
-            temp_dict[row[7]] = row[8]
+        if row[8] is not None and row[9] is not None:
+            temp_dict[row[8]] = row[9]
     for i in sorted(temp_dict.keys()):
         result_list.append(temp_dict[i])
 
@@ -186,3 +226,43 @@ def get_task_id_from_name_flat_code(task_name: str, flat_code: str):
     
     task_id = result_task_id[0]
     return task_id
+
+def get_task_details_by_flat_code(flat_code: str):
+
+    get_task_stmt = "select task_id from task where flat_code=%s"
+    cur.execute(get_task_stmt,
+                (flat_code))
+    result_task_ids = cur.fetchall()
+    
+    if len(result_task_ids) == 0:
+        raise ValueError("No tasks found under the given flat code.")
+    
+    result = []
+    
+    for task_id in result_task_ids:
+        result.append(get_task_details(task_id))
+    
+    return result
+
+
+def getDateFromFreq(frequency, current_date):
+    # Convert the input date string to a datetime object
+    current_date = datetime.strptime(current_date, '%Y-%m-%d')
+
+    # Define a dictionary to map frequency strings to timedelta values
+    frequency_mapping = {
+        'no_repeat': timedelta(days=0),
+        'daily': timedelta(days=1),
+        'weekly': timedelta(weeks=1),
+        'monthly': timedelta(days=30)  # Assuming a month is approximately 30 days
+    }
+
+    # Get the corresponding timedelta for the given frequency
+    delta = frequency_mapping.get(frequency.lower())
+
+    if delta is not None:
+        # Calculate the next date by adding the timedelta to the current date
+        next_date = current_date + delta
+        return next_date.strftime('%Y-%m-%d')  # Convert the result back to string format
+    else:
+        return "Invalid frequency"
