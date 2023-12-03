@@ -1,7 +1,10 @@
+from typing import Optional
 
 import pymysql
 from pydantic.schema import List
 from datetime import datetime, timedelta
+
+from pymysql import MySQLError
 
 from model.task import CreateTask, UpdateTask, GetTask
 
@@ -157,7 +160,7 @@ def delete_task(task_id: int):
 
 def get_task_details(task_id: int) -> GetTask:
 
-    cur.callproc("get_all_task_details_by_task_id", (str(task_id),))
+    cur.callproc("get_all_task_details_by_task_id", (task_id,))
     result = cur.fetchall()
     
     if len(result)==0:
@@ -227,22 +230,48 @@ def get_task_id_from_name_flat_code(task_name: str, flat_code: str):
     task_id = result_task_id[0]
     return task_id
 
-def get_task_details_by_flat_code(flat_code: str):
+
+def get_task_details_by_flat_code(flat_code: str, date: Optional[str] = None):
 
     get_task_stmt = "select task_id from task where flat_code=%s"
     cur.execute(get_task_stmt,
-                (flat_code))
+                flat_code)
     result_task_ids = cur.fetchall()
     
     if len(result_task_ids) == 0:
         raise ValueError("No tasks found under the given flat code.")
-    
+
     result = []
     
     for task_id in result_task_ids:
-        result.append(get_task_details(task_id))
+        result.append(get_task_details(task_id[0]))
+
+    if date is not None:
+        return get_task_details_date(tasks=result, date=date)
     
     return result
+
+
+def get_task_details_date(tasks: List[GetTask], date: str):
+
+    result_tasks_for_date = []
+    focus_date = datetime.strptime(date, '%Y-%m-%d')
+
+    frequency_mapping = {
+        'no_repeat': timedelta(days=0),
+        'daily': timedelta(days=1),
+        'weekly': timedelta(weeks=1),
+        'monthly': timedelta(days=30)
+    }
+
+    for task in tasks:
+
+        delta = frequency_mapping.get(task.frequency.lower())
+        task_date = datetime.strptime(task.task_date, '%Y-%m-%d')
+        if abs(focus_date - task_date).days % delta.days == 0:
+            result_tasks_for_date.append(task)
+
+    return result_tasks_for_date
 
 
 def getDateFromFreq(frequency, current_date):
