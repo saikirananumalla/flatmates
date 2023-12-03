@@ -58,7 +58,7 @@ def get_payments_involve_username(current_user: user.AuthUser = Depends(get_curr
         return payments_result
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
-    
+
 
 @payment_router.get("/payment/money/owe",
                     response_model=MoneyTotal, tags=["payments"])
@@ -105,3 +105,12 @@ def delete_payment_by_id(payment_id: int, current_user: user.AuthUser = Depends(
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
 
+
+@payment_router.get("/payment/money/owed", response_model=MoneyTotal, tags=["payments"])
+def get_payments_by_username(current_user: user.AuthUser = Depends(get_current_user)):
+    try:
+        total_result = (
+            payment_dao.get_money_owed(username=current_user.username))
+        return total_result
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))

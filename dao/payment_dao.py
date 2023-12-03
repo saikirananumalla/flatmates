@@ -4,6 +4,14 @@ from pymysql import MySQLError
 
 from config.db import get_connection
 from model.payment import PaymentDetails, GetPayment, UpdatePayment, PaymentDetailsWithId, MoneyTotal, UserMoney
+from model.payment import (
+    PaymentDetails,
+    GetPayment,
+    UpdatePayment,
+    PaymentDetailsWithId,
+    UserMoney,
+    MoneyTotal,
+)
 
 cur = get_connection().cursor()
 
@@ -315,24 +323,37 @@ def get_money_owed(username: str):
 
     try:
 
-        get_payment_details_stmt = (
-            "SELECT payment_id, flat_code, name, paid_by, amount_paid,"
-            " payment_type, payment_date FROM payment where paid_by=%s"
-        )
-        cur.execute(
-            get_payment_details_stmt,
-            username,
-        )
-        payments_by_user = cur.fetchall()
+        total_money = 0
+        result_payments = get_payment_details_by_username(username=username)
+        user_list = []
+        user_dict_temp = {}
+        for payment in result_payments:
 
+            total_money = total_money + int(payment.paid_amount)
+            number_of_users = len(payment.affected_flatmates)
+            to_be_paid = payment.paid_amount / number_of_users
+            for user in payment.affected_flatmates:
 
-    except Exception:
+                if user[1] == "1":
+                    continue
+                else:
+                    if user[0] in user_dict_temp.keys():
+                        user_dict_temp[user[0]] = user_dict_temp[user[0]] + to_be_paid
+                    else:
+                        user_dict_temp[user[0]] = to_be_paid
 
-        pass
+        for user_money in user_dict_temp.items():
+
+            user_list.append(UserMoney(user=user_money[0], money=user_money[1]))
+
+        return MoneyTotal(total_money=total_money, individual_money=user_list)
+
+    except Exception as e:
+        raise e
 
 
 def get_money_owe(username):
-    
+
     money_owe = {}
     total = 0
 
@@ -347,15 +368,15 @@ def get_money_owe(username):
                     total = total + amount
                     money_owe.setdefault(payment.payee, 0)
                     money_owe[payment.payee] += amount
-    
-    
+
+
         user_list = []
-        
+
         for key in money_owe.items():
             user_list.append(UserMoney(user=key[0], money=key[1]))
-            
+
         return MoneyTotal(total_money=total, individual_money= user_list)
-                
+
 
     except Exception as e:
         raise ValueError("Error fetching money this user owes" + str(e))
