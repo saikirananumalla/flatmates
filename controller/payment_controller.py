@@ -5,7 +5,7 @@ from model import payment as pm, user
 from dao import payment_dao
 from fastapi import APIRouter, HTTPException, Depends
 
-from model.payment import GetPayment, UpdatePayment
+from model.payment import GetPayment, UpdatePayment, MoneyTotal
 
 payment_router = APIRouter()
 
@@ -60,6 +60,17 @@ def get_payments_involve_username(current_user: user.AuthUser = Depends(get_curr
         raise HTTPException(status_code=400, detail=str(ve))
 
 
+@payment_router.get("/payment/money/owe",
+                    response_model=MoneyTotal, tags=["payments"])
+def get_money_owe(current_user: user.AuthUser = Depends(get_current_user)):
+    try:
+        payments_result = (
+            payment_dao.get_money_owe(username=current_user.username))
+        return payments_result
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+
+
 @payment_router.patch("/payment/{payment_id}", response_model=str, tags=["payments"])
 def mark_payment_as_done(payment_id: int, paid_status: bool,
                          current_user: user.AuthUser = Depends(get_current_user)):
@@ -91,5 +102,15 @@ def delete_payment_by_id(payment_id: int, current_user: user.AuthUser = Depends(
         payments_result = payment_dao.delete_payment(p_id=payment_id,
                                                      flat_code_user=current_user.flat_code)
         return payments_result
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+
+
+@payment_router.get("/payment/money/owed", response_model=MoneyTotal, tags=["payments"])
+def get_payments_by_username(current_user: user.AuthUser = Depends(get_current_user)):
+    try:
+        total_result = (
+            payment_dao.get_money_owed(username=current_user.username))
+        return total_result
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))

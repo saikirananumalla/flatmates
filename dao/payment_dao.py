@@ -3,7 +3,15 @@ from pydantic.schema import List
 from pymysql import MySQLError
 
 from config.db import get_connection
-from model.payment import PaymentDetails, GetPayment, UpdatePayment, PaymentDetailsWithId
+from model.payment import PaymentDetails, GetPayment, UpdatePayment, PaymentDetailsWithId, MoneyTotal, UserMoney
+from model.payment import (
+    PaymentDetails,
+    GetPayment,
+    UpdatePayment,
+    PaymentDetailsWithId,
+    UserMoney,
+    MoneyTotal,
+)
 
 cur = get_connection().cursor()
 
@@ -297,7 +305,7 @@ def delete_payment(p_id: int, flat_code_user: str):
         return cur.rowcount > 0
     except pymysql.Error:
 
-        raise ValueError("Could not create a payment error pls check your inputs")
+        raise ValueError("Could not delete a payment error pls check your inputs")
 
 
 def check_user_in_flat(flat_code_user, p_id):
@@ -309,3 +317,69 @@ def check_user_in_flat(flat_code_user, p_id):
         raise ValueError("Invalid Payment ID")
     if res[0] != flat_code_user:
         raise ValueError("User not in the flat")
+
+
+def get_money_owed(username: str):
+
+    try:
+
+        total_money = 0
+        result_payments = get_payment_details_by_username(username=username)
+        user_list = []
+        user_dict_temp = {}
+        for payment in result_payments:
+
+            num_unpaid_users = 0
+            number_of_users = len(payment.affected_flatmates)
+            to_be_paid = payment.paid_amount / number_of_users
+            for user in payment.affected_flatmates:
+
+                if user[1] == "1":
+                    continue
+                else:
+                    num_unpaid_users = num_unpaid_users + 1
+                    if user[0] in user_dict_temp.keys():
+                        user_dict_temp[user[0]] = user_dict_temp[user[0]] + to_be_paid
+                    else:
+                        user_dict_temp[user[0]] = to_be_paid
+
+            total_money = total_money + (payment.paid_amount / number_of_users) * num_unpaid_users
+
+        for user_money in user_dict_temp.items():
+
+            user_list.append(UserMoney(user=user_money[0], money=user_money[1]))
+
+        return MoneyTotal(total_money=total_money, individual_money=user_list)
+
+    except Exception as e:
+        raise e
+
+
+def get_money_owe(username):
+
+    money_owe = {}
+    total = 0
+
+    try:
+        payments = get_payment_details_involve_username(username)
+        for payment in payments:
+            for tup in payment.affected_flatmates:
+                roommate = tup[0]
+                has_paid = tup[1]
+                if roommate == username and has_paid == "0":
+                    amount = payment.paid_amount / len(payment.affected_flatmates)
+                    total = total + amount
+                    money_owe.setdefault(payment.payee, 0)
+                    money_owe[payment.payee] += amount
+
+
+        user_list = []
+
+        for key in money_owe.items():
+            user_list.append(UserMoney(user=key[0], money=key[1]))
+
+        return MoneyTotal(total_money=total, individual_money= user_list)
+
+
+    except Exception as e:
+        raise ValueError("Error fetching money this user owes" + str(e))
