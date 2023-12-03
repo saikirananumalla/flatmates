@@ -5,8 +5,10 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 import hashlib
 from typing import Annotated
+from config.oauth import create_access_token, get_current_user
 
-from dao import user_dao
+from dao import user_dao, flatmate_dao
+from model import user
 
 from controller.payment_controller import payment_router
 from controller.task_controller import task_router
@@ -24,36 +26,6 @@ app.include_router(room_router)
 app.include_router(flatmate_router)
 app.include_router(task_router)
 app.include_router(belonging_router)
-
-SECRET_KEY = config("SECRET_KEY")
-ALGORITHM = config("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = 10
-
-
-# Function to create JWT tokens
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-
-# Dependency to get current user
-def get_current_user(token: HTTPBasicCredentials = Depends(HTTPBearer())):
-    credentials_exception = HTTPException(
-        status_code=401,
-        detail="Invalid credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")  
-        if username is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-    return payload
 
 
 # Login route to get JWT token
@@ -76,5 +48,5 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
 
 
 @app.get("/test-protected")
-async def some_protected_endpoint(current_user: dict = Depends(get_current_user)):
+async def some_protected_endpoint(current_user: user.AuthUser = Depends(get_current_user)):
     return {"message": "This is a protected endpoint", "user": current_user}

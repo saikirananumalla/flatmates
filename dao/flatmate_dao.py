@@ -37,6 +37,23 @@ def get_flatmate(username: str):
         raise ValueError(f"Error getting flatmate details: pls check your inputs")
     
 
+    
+def get_flat_code_by_user(username: str):
+    try:
+        get_flat_stmt = "SELECT flat_code FROM flatmate WHERE username=%s"
+
+        with get_connection().cursor() as cur:
+            cur.execute(get_flat_stmt, username)
+            result = cur.fetchone()
+
+        if not result:
+            return None
+
+        return result[0]
+    except MySQLError as e:
+        raise ValueError(f"Error getting flat: pls check your inputs") 
+    
+
 def get_flatmates_by_flat(flat_code: str):
     try:
 
