@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, constr
-
+from typing import Optional
 
 class User(BaseModel):
     username: str
@@ -8,3 +8,7 @@ class User(BaseModel):
 
 class UserWithPassword(User):
     password: str
+
+class AuthUser(BaseModel):
+    username: str
+    flat_code: Optional[str]

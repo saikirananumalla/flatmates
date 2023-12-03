@@ -1,11 +1,13 @@
 from model import flat
 from dao import flat_dao
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from config.oauth import get_current_user
+from model import user
 
 flat_router = APIRouter()
 
 @flat_router.post("/flat", response_model=flat.Flat, tags=["flat"])
-def create_flat(flat_name: str):
+def create_flat(flat_name: str, current_user: user.AuthUser = Depends(get_current_user)):
     try:
         return flat_dao.create_flat(name=flat_name)
     except ValueError as ve:

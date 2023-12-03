@@ -36,6 +36,7 @@ def get_flat(flat_code: str):
         return flat_model
     except MySQLError as e:
         raise ValueError(f"Error getting flat: pls check your inputs")
+       
 
 def update_flat_name(flat: flat.Flat):
     try:
