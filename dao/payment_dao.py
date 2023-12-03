@@ -329,7 +329,7 @@ def get_money_owed(username: str):
         user_dict_temp = {}
         for payment in result_payments:
 
-            total_money = total_money + int(payment.paid_amount)
+            num_unpaid_users = 0
             number_of_users = len(payment.affected_flatmates)
             to_be_paid = payment.paid_amount / number_of_users
             for user in payment.affected_flatmates:
@@ -337,10 +337,13 @@ def get_money_owed(username: str):
                 if user[1] == "1":
                     continue
                 else:
+                    num_unpaid_users = num_unpaid_users + 1
                     if user[0] in user_dict_temp.keys():
                         user_dict_temp[user[0]] = user_dict_temp[user[0]] + to_be_paid
                     else:
                         user_dict_temp[user[0]] = to_be_paid
+
+            total_money = total_money + (payment.paid_amount / number_of_users) * num_unpaid_users
 
         for user_money in user_dict_temp.items():
 
