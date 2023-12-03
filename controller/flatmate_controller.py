@@ -17,7 +17,7 @@ def join_flat(flat_code: str, current_user: user.AuthUser = Depends(get_current_
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
 
-@flatmate_router.delete("/flatmate/", tags=["flatmate"])
+@flatmate_router.delete("/flatmate", tags=["flatmate"])
 def leave_flat(current_user: user.AuthUser = Depends(get_current_user)):
     try:
         if current_user.flat_code is None:
@@ -30,7 +30,7 @@ def leave_flat(current_user: user.AuthUser = Depends(get_current_user)):
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
 
-@flatmate_router.put("/flatmate/", response_model=flatmate.FlatmateWithRoomName, tags=["flatmate"])
+@flatmate_router.put("/flatmate", response_model=flatmate.FlatmateWithRoomName, tags=["flatmate"])
 def update_flatmate_room(room_name: str, current_user: user.AuthUser = Depends(get_current_user)):
     try:
         
