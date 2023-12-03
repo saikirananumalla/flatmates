@@ -305,7 +305,7 @@ def delete_payment(p_id: int, flat_code_user: str):
         return cur.rowcount > 0
     except pymysql.Error:
 
-        raise ValueError("Could not create a payment error pls check your inputs")
+        raise ValueError("Could not delete a payment error pls check your inputs")
 
 
 def check_user_in_flat(flat_code_user, p_id):
