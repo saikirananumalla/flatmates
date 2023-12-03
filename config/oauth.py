@@ -1,8 +1,10 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from decouple import config
 from fastapi.security import HTTPBasicCredentials, HTTPBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
+
+from dao import flatmate_dao
 from model import user
 
 

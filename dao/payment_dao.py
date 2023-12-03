@@ -1,10 +1,9 @@
-from datetime import datetime
-
 import pymysql
 from pydantic.schema import List
+from pymysql import MySQLError
 
-from model.payment import PaymentDetails, GetPayment, UpdatePayment, PaymentDetailsWithId
 from config.db import get_connection
+from model.payment import PaymentDetails, GetPayment, UpdatePayment, PaymentDetailsWithId
 
 cur = get_connection().cursor()
 
@@ -59,8 +58,8 @@ def create_payment(p: PaymentDetails):
                         False,
                     ),
                 )
-        except MySQLError as e:
-            delete_payment(payment_id)
+        except MySQLError:
+            delete_payment(payment_id[0], p.flat_code)
             raise ValueError(f"Error creating payment: pls check affected flatmates")
         return PaymentDetailsWithId(
             payment_name=p.payment_name,
@@ -73,7 +72,7 @@ def create_payment(p: PaymentDetails):
             payment_id=payment_id[0])
         
     except pymysql.Error as pe:
-        raise ValueError("Could not create a payment " + "pls check your inputs"  + str(pe))
+        raise ValueError("Could not create a payment " + "pls check your inputs" + str(pe))
 
 
 def get_payment_details_by_flat_code(flat_code: str) -> List[GetPayment]:
@@ -112,7 +111,7 @@ def get_payment_details_by_flat_code(flat_code: str) -> List[GetPayment]:
                 affected_flatmates=affected_users,
             )
             result.append(ret)
-    except pymysql.Error as pe:
+    except pymysql.Error:
 
         raise ValueError("Could not retrieve payment details pls check your inputs")
 
@@ -155,7 +154,7 @@ def get_payment_details_by_username(username: str) -> List[GetPayment]:
                 affected_flatmates=affected_users,
             )
             result.append(ret)
-    except pymysql.Error as pe:
+    except pymysql.Error:
 
         raise ValueError("Could not retrieve payment details pls check your inputs")
 
@@ -208,14 +207,14 @@ def get_payment_details_involve_username(username: str) -> List[GetPayment]:
                 affected_flatmates=affected_users,
             )
             result.append(ret)
-    except pymysql.Error as pe:
+    except pymysql.Error:
 
         raise ValueError("Could not retrieve payment details pls check your inputs")
 
     return result
 
 
-def update_payment_by_user(p_id: int, username: str, paid_status:bool):
+def update_payment_by_user(p_id: int, username: str, paid_status: bool):
     
     paid = 0
     if paid_status:
@@ -231,7 +230,7 @@ def update_payment_by_user(p_id: int, username: str, paid_status:bool):
             (str(paid), str(p_id), username),
         )
         return cur.rowcount > 0
-    except pymysql.Error as pe:
+    except pymysql.Error:
 
         raise ValueError("Could not retrieve payment details pls check your inputs")
 
@@ -243,7 +242,7 @@ def update_payment_details(payment_details: UpdatePayment):
                            " payment_type=%s "
                            "where payment_id=%s")
 
-    drop_affected_user_stmt = ("delete from payment_affected_users where payment_id=%s")
+    drop_affected_user_stmt = "delete from payment_affected_users where payment_id=%s"
     
     update_affected_user_stmt = (
         "INSERT INTO `payment_affected_users` (`payment_id`, `username`, `is_paid`)"
@@ -251,13 +250,14 @@ def update_payment_details(payment_details: UpdatePayment):
     )
 
     try:
+
         cur.execute(
             update_payment_stmt,
             (payment_details.payment_name, payment_details.payee, payment_details.payment_date,
              payment_details.paid_amount, payment_details.payment_type, payment_details.payment_id),
         )
         
-        cur.execute(drop_affected_user_stmt, (payment_details.payment_id))
+        cur.execute(drop_affected_user_stmt, payment_details.payment_id)
         
         for username in payment_details.affected_flatmates:
 
@@ -271,18 +271,21 @@ def update_payment_details(payment_details: UpdatePayment):
             )
 
         return payment_details
-    except pymysql.Error as pe:
+    except pymysql.Error:
 
         raise ValueError("Could not retrieve payment details pls check your inputs")
 
 
-def delete_payment(p_id: int):
+def delete_payment(p_id: int, flat_code_user: str):
 
     delete_payment_stmt = "delete from payment where payment_id=%s"
     delete_payment_affected_users = (
         "delete from payment_affected_users where payment_id=%s"
     )
     try:
+
+        check_user_in_flat(flat_code_user, p_id)
+
         cur.execute(
             delete_payment_stmt,
             str(p_id),
@@ -292,6 +295,17 @@ def delete_payment(p_id: int):
             p_id,
         )
         return cur.rowcount > 0
-    except pymysql.Error as pe:
+    except pymysql.Error:
 
         raise ValueError("Could not create a payment error pls check your inputs")
+
+
+def check_user_in_flat(flat_code_user, p_id):
+
+    cur.execute("select flat_code from payment where payment_id = %s",
+                p_id)
+    res = cur.fetchone()
+    if res is None:
+        raise ValueError("Invalid Payment ID")
+    if res[0] != flat_code_user:
+        raise ValueError("User not in the flat")

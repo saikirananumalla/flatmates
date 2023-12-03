@@ -22,7 +22,17 @@ class PaymentDetails(BaseModel):
     paid_amount: float
     payment_type: str
     flat_code: str
-    
+
+
+class PaymentDetailsWithOutFlatCode(BaseModel):
+    payment_name: str
+    payee: str
+    payment_date: str
+    affected_flatmates: Optional[List[str]]
+    paid_amount: float
+    payment_type: str
+
+
 class PaymentDetailsWithId(PaymentDetails):
     
     payment_id: str
