@@ -3,7 +3,7 @@ from pydantic.schema import List
 from pymysql import MySQLError
 
 from config.db import get_connection
-from model.payment import PaymentDetails, GetPayment, UpdatePayment, PaymentDetailsWithId
+from model.payment import PaymentDetails, GetPayment, UpdatePayment, PaymentDetailsWithId, MoneyTotal, UserMoney
 
 cur = get_connection().cursor()
 
@@ -332,11 +332,30 @@ def get_money_owed(username: str):
 
 
 def get_money_owe(username):
+    
+    money_owe = {}
+    total = 0
 
     try:
+        payments = get_payment_details_involve_username(username)
+        for payment in payments:
+            for tup in payment.affected_flatmates:
+                roommate = tup[0]
+                has_paid = tup[1]
+                if roommate == username and has_paid == "0":
+                    amount = payment.paid_amount / len(payment.affected_flatmates)
+                    total = total + amount
+                    money_owe.setdefault(payment.payee, 0)
+                    money_owe[payment.payee] += amount
+    
+    
+        user_list = []
+        
+        for key in money_owe.items():
+            user_list.append(UserMoney(user=key[0], money=key[1]))
+            
+        return MoneyTotal(total_money=total, individual_money= user_list)
+                
 
-        pass
-
-    except Exception:
-
-        pass
+    except Exception as e:
+        raise ValueError("Error fetching money this user owes" + str(e))

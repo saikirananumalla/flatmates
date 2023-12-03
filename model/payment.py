@@ -53,10 +53,10 @@ class GetPayment(BaseModel):
 class UserMoney(BaseModel):
 
     user: str
-    money: int
+    money: float
 
 
 class MoneyTotal(BaseModel):
 
-    total_money: int
-    individual_money: List[UserMoney]
+    total_money: float
+    individual_money: Optional[List[UserMoney]]
