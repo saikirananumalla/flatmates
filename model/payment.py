@@ -48,3 +48,15 @@ class GetPayment(BaseModel):
     payment_type: str
     payment_date: str
     affected_flatmates: Optional[List[Tuple[str, str]]]
+
+
+class UserMoney(BaseModel):
+
+    user: str
+    money: int
+
+
+class MoneyTotal(BaseModel):
+
+    total_money: int
+    individual_money: List[UserMoney]

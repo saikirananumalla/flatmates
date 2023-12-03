@@ -309,3 +309,34 @@ def check_user_in_flat(flat_code_user, p_id):
         raise ValueError("Invalid Payment ID")
     if res[0] != flat_code_user:
         raise ValueError("User not in the flat")
+
+
+def get_money_owed(username: str):
+
+    try:
+
+        get_payment_details_stmt = (
+            "SELECT payment_id, flat_code, name, paid_by, amount_paid,"
+            " payment_type, payment_date FROM payment where paid_by=%s"
+        )
+        cur.execute(
+            get_payment_details_stmt,
+            username,
+        )
+        payments_by_user = cur.fetchall()
+
+
+    except Exception:
+
+        pass
+
+
+def get_money_owe(username):
+
+    try:
+
+        pass
+
+    except Exception:
+
+        pass

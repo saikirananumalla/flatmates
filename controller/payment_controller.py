@@ -93,3 +93,4 @@ def delete_payment_by_id(payment_id: int, current_user: user.AuthUser = Depends(
         return payments_result
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
+
