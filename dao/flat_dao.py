@@ -38,13 +38,12 @@ def get_flat(flat_code: str):
         raise ValueError(f"Error getting flat: pls check your inputs")
        
 
-def update_flat_name(flat: flat.Flat):
+def update_flat_name(flat_code: str, flat_name: str):
     try:
-        flat_code = flat.flat_code
         update_name_stmt = "UPDATE flat SET name=%s WHERE flat_code=%s"
 
         with get_connection().cursor() as cur:
-            cur.execute(update_name_stmt, (flat.name, flat_code))
+            cur.execute(update_name_stmt, (flat_name, flat_code))
 
         return get_flat(flat_code)
     except MySQLError as e:

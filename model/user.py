@@ -12,3 +12,7 @@ class UserWithPassword(User):
 class AuthUser(BaseModel):
     username: str
     flat_code: Optional[str]
+    
+class LoginForm(BaseModel):
+    username: str
+    password: str

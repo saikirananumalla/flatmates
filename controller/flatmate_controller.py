@@ -1,31 +1,43 @@
 from model import flatmate
 from dao import flatmate_dao
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic.schema import List
+from config.oauth import get_current_user
+from model import user
 
 flatmate_router = APIRouter()
 
 @flatmate_router.post("/flatmate", response_model=flatmate.FlatmateWithRoomName, tags=["flatmate"])
-def join_flat(flatmate: flatmate.FlatmateBase):
+def join_flat(flat_code: str, current_user: user.AuthUser = Depends(get_current_user)):
     try:
-        return flatmate_dao.create_flatmate(flatmate)
+        if current_user.flat_code is not None:
+            raise HTTPException(status_code=401, detail="User already registered in a flat")
+        
+        return flatmate_dao.create_flatmate(flatmate.FlatmateBase(username=current_user.username, flat_code=flat_code))
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
 
-@flatmate_router.delete("/flatmate/{username}", tags=["flatmate"])
-def leave_flat(username: str):
+@flatmate_router.delete("/flatmate/", tags=["flatmate"])
+def leave_flat(current_user: user.AuthUser = Depends(get_current_user)):
     try:
-        success = flatmate_dao.delete_flatmate(username)
+        if current_user.flat_code is None:
+            raise HTTPException(status_code=401, detail="User not registered in any flat")
+        
+        success = flatmate_dao.delete_flatmate(current_user.username)
         if not success:
             raise HTTPException(status_code=404, detail="flatmate not found")
         return success
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
 
-@flatmate_router.put("/flatmate/{username}", response_model=flatmate.FlatmateWithRoomName, tags=["flatmate"])
-def update_flatmate_room(username: str, room_name: str):
+@flatmate_router.put("/flatmate/", response_model=flatmate.FlatmateWithRoomName, tags=["flatmate"])
+def update_flatmate_room(room_name: str, current_user: user.AuthUser = Depends(get_current_user)):
     try:
-        result = flatmate_dao.update_room(username, room_name)
+        
+        if current_user.flat_code is None:
+            raise HTTPException(status_code=401, detail="User not registered in any flat")
+        
+        result = flatmate_dao.update_room(current_user.username, room_name)
         if result is None:
             raise HTTPException(status_code=404, detail="flatmate not found")
 
@@ -33,10 +45,14 @@ def update_flatmate_room(username: str, room_name: str):
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
 
-@flatmate_router.get("/flatmate/{username}", response_model=flatmate.FlatmateWithRoomName, tags=["flatmate"])
-def get_flatmate(username: str):
+@flatmate_router.get("/flatmate", response_model=flatmate.FlatmateWithRoomName, tags=["flatmate"])
+def get_flatmate(current_user: user.AuthUser = Depends(get_current_user)):
     try:
-        result = flatmate_dao.get_flatmate(username)
+        
+        if current_user.flat_code is None:
+            raise HTTPException(status_code=401, detail="User not registered in any flat")
+        
+        result = flatmate_dao.get_flatmate(current_user.username)
         
         if result is None:
             raise HTTPException(status_code=404, detail="flatmate not found")
@@ -46,10 +62,14 @@ def get_flatmate(username: str):
         raise HTTPException(status_code=400, detail=str(ve))
     
     
-@flatmate_router.get("/flatmates/{flat_code}", response_model=List[flatmate.FlatmateWithRoomName], tags=["flatmate"])
-def get_flatmates_in_flat(flat_code: str):
+@flatmate_router.get("/flatmates/flat/all", response_model=List[flatmate.FlatmateWithRoomName], tags=["flatmate"])
+def get_flatmates_in_flat(current_user: user.AuthUser = Depends(get_current_user)):
     try:
-        result = flatmate_dao.get_flatmates_by_flat(flat_code)
+        
+        if current_user.flat_code is None:
+            raise HTTPException(status_code=401, detail="User not registered in any flat")
+        
+        result = flatmate_dao.get_flatmates_by_flat(current_user.flat_code)
         if result is None:
             raise HTTPException(status_code=404, detail="flat does not exist")
         return result
