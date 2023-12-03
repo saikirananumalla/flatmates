@@ -42,7 +42,6 @@ def get_task_details_by_flat_code(flat_code: str, date: Union[str, None] = None)
 @task_router.get("/task/all/username/{username}", response_model=List[GetTask], tags=["task"])
 def get_task_details_by_flatmate(username: str, date: Union[str, None] = None):
     try:
-        print("hi")
         get_task_details_by_flatmate_result = task_dao.get_task_details_by_flatmate(username=username,date=date)
         return get_task_details_by_flatmate_result
     except ValueError as ve:
