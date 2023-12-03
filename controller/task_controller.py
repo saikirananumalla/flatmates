@@ -19,7 +19,6 @@ def create_task(task_details: CreateTask):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-
 @task_router.get("/task/{task_name}/{flat_code}", response_model=GetTask, tags=["task"])
 def get_task_details(task_name: str, flat_code: str):
     try:
@@ -35,15 +34,6 @@ def get_task_details_by_flat_code(flat_code: str, date: Union[str, None] = None)
         get_task_details_by_flat_code_result = (
             task_dao.get_task_details_by_flat_code(flat_code=flat_code, date=date))
         return get_task_details_by_flat_code_result
-    except ValueError as ve:
-        raise HTTPException(status_code=400, detail=str(ve))
-
-
-@task_router.get("/task/{task_id}", response_model=GetTask, tags=["task"])
-def get_task_details_by_task_id(task_id: int):
-    try:
-        result_task = task_dao.get_task_details(task_id=task_id)
-        return result_task
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
 

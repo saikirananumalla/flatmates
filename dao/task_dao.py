@@ -4,6 +4,8 @@ import pymysql
 from pydantic.schema import List
 from datetime import datetime, timedelta
 
+from pymysql import MySQLError
+
 from model.task import CreateTask, UpdateTask, GetTask
 
 from config.db import get_connection
@@ -158,7 +160,7 @@ def delete_task(task_id: int):
 
 def get_task_details(task_id: int) -> GetTask:
 
-    cur.callproc("get_all_task_details_by_task_id", (str(task_id),))
+    cur.callproc("get_all_task_details_by_task_id", (task_id,))
     result = cur.fetchall()
     
     if len(result)==0:
@@ -238,11 +240,11 @@ def get_task_details_by_flat_code(flat_code: str, date: Optional[str] = None):
     
     if len(result_task_ids) == 0:
         raise ValueError("No tasks found under the given flat code.")
-    
+
     result = []
     
     for task_id in result_task_ids:
-        result.append(get_task_details(task_id))
+        result.append(get_task_details(task_id[0]))
 
     if date is not None:
         return get_task_details_date(tasks=result, date=date)
@@ -266,8 +268,7 @@ def get_task_details_date(tasks: List[GetTask], date: str):
 
         delta = frequency_mapping.get(task.frequency.lower())
         task_date = datetime.strptime(task.task_date, '%Y-%m-%d')
-
-        if abs(focus_date - task_date) % delta == 0:
+        if abs(focus_date - task_date).days % delta.days == 0:
             result_tasks_for_date.append(task)
 
     return result_tasks_for_date
