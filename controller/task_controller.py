@@ -1,6 +1,7 @@
 from dao import task_dao
 from fastapi import APIRouter, HTTPException
 from pydantic.schema import List
+from typing import Union
 
 
 from model.task import GetTask, CreateTask, UpdateTask
@@ -34,13 +35,13 @@ def get_task_details_by_flat_code(flat_code: str):
         return get_task_details_by_flat_code_result
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
-
-
-@task_router.get("/task/{task_id}", response_model=GetTask, tags=["task"])
-def get_task_details_by_task_id(task_id: int):
+    
+    
+@task_router.get("/taskuser/{username}", response_model=List[GetTask], tags=["task"])
+def get_task_details_by_flatmate(username: str):
     try:
-        result_task = task_dao.get_task_details(task_id=task_id)
-        return result_task
+        get_task_details_by_flatmate_result = task_dao.get_task_details_by_flatmate(username=username)
+        return get_task_details_by_flatmate_result
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
 

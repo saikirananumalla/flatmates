@@ -60,7 +60,7 @@ def get_task(task_name: str, flat_code: str) -> GetTask:
     try:
         result_task_id = get_task_id_from_name_flat_code(task_name, flat_code)
         return get_task_details(result_task_id)
-    except MySQLError as e:
+    except Exception as e:
         raise ValueError(f"Error getting task: pls check your inputs")
 
 
@@ -157,7 +157,7 @@ def delete_task(task_id: int):
 
 def get_task_details(task_id: int) -> GetTask:
 
-    cur.callproc("get_all_task_details_by_task_id", (str(task_id),))
+    cur.callproc("get_all_task_details_by_task_id", (task_id,))
     result = cur.fetchall()
     
     if len(result)==0:
@@ -167,6 +167,7 @@ def get_task_details(task_id: int) -> GetTask:
     # task_order_id, seq_number, username is the order of the result.
     temp_dict = {}
     result_list = []
+    
 
     for row in result:
         if row[8] is not None and row[9] is not None:
@@ -236,6 +237,24 @@ def get_task_details_by_flat_code(flat_code: str):
     
     if len(result_task_ids) == 0:
         raise ValueError("No tasks found under the given flat code.")
+    
+    result = []
+    
+    for task_id in result_task_ids:
+        result.append(get_task_details(task_id))
+    
+    return result
+
+def get_task_details_by_flatmate(username: str):
+    get_task_stmt = "select task_id from task where current_assigned_to=%s"
+    cur.execute(get_task_stmt,
+                (username))
+    result_task_ids = cur.fetchall()
+    
+    if len(result_task_ids) == 0:
+        raise ValueError("No tasks found for the user.")
+    
+    print("hello")
     
     result = []
     
