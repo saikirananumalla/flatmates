@@ -22,7 +22,8 @@ class PaymentDetails(BaseModel):
     paid_amount: float
     payment_type: str
     flat_code: str
-    
+
+
 class PaymentDetailsWithId(PaymentDetails):
     
     payment_id: str
