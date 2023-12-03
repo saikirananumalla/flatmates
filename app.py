@@ -29,11 +29,11 @@ app.include_router(belonging_router)
 
 
 # Login route to get JWT token
-@app.post("/token")
-async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+@app.post("/login", tags=["login"])
+async def login(login_form: user.LoginForm):
     # Hash the password using SHA-256
-    hashed_password = hashlib.sha256(form_data.password.encode('utf-8')).hexdigest()
-    user = user_dao.get(form_data.username)
+    hashed_password = hashlib.sha256(login_form.password.encode('utf-8')).hexdigest()
+    user = user_dao.get(login_form.username)
     if user is None or hashed_password != user.password:
         raise HTTPException(
             status_code=401,
@@ -45,8 +45,3 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     token_data = {"sub": user.username}
     access_token =  {"access_token": create_access_token(token_data), "token_type": "bearer"}
     return access_token
-
-
-@app.get("/test-protected")
-async def some_protected_endpoint(current_user: user.AuthUser = Depends(get_current_user)):
-    return {"message": "This is a protected endpoint", "user": current_user}

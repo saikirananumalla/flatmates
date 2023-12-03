@@ -1,5 +1,5 @@
 from model import belonging
-
+from fastapi import HTTPException
 from config.db import get_connection
 from pymysql import MySQLError
 
@@ -92,11 +92,43 @@ def get_belongings_by_flat(flat_code: str):
         return result_models
     except MySQLError as e:
         raise ValueError(f"Error getting belongings by flat: pls check your inputs")
+    
+    
+def get_belongings_by_flatmate(username: str, flat_code: str):
+    try:
+
+        with get_connection().cursor() as cur:
+            cur.callproc("get_belonging_by_flatmate", (username, flat_code,))
+            result = cur.fetchall()
+
+        if not result:
+            return None
+    
+        result_models = []
+        
+        for i in range(len(result)):
+            
+            belonging_model = belonging.BelongingStr(
+                belonging_id=result[i][0],
+                description=result[i][1],
+                name=result[i][2],
+                flat_code=result[i][3],
+                owners=result[i][4]
+            )
+            result_models.append(belonging_model)
+            
+        return result_models
+    except MySQLError as e:
+        raise ValueError(f"Error getting belongings by flatmate: pls check your inputs")
 
 
-def update_belonging(belonging_id: int, belonging: belonging.UpdateBelonging):
+def update_belonging(belonging_id: int, belonging: belonging.UpdateBelonging, flat_code: str):
     cur = get_connection().cursor()
     try:
+        belong = get_belonging_by_id(belonging_id)
+        if belong.flat_code != flat_code:
+            raise HTTPException(status_code=401, detail="belonging not found in your registered flat")
+        
         cur.callproc("update_belonging", (belonging_id, belonging.description, belonging.name))
 
         cur.callproc("drop_belonging_owners", (belonging_id,))
@@ -109,8 +141,11 @@ def update_belonging(belonging_id: int, belonging: belonging.UpdateBelonging):
     except MySQLError as e:
         raise ValueError(f"Error updating belonging: pls check your inputs")
 
-def delete_belonging(belonging_id: int):
+def delete_belonging(belonging_id: int, flat_code: str):
     try:
+        belong = get_belonging_by_id(belonging_id)
+        if belong.flat_code != flat_code:
+            raise HTTPException(status_code=401, detail="belonging not found in your registered flat")
         delete_stmt = "DELETE FROM belonging WHERE belonging_id=%s"
 
         with get_connection().cursor() as cur:

@@ -63,8 +63,9 @@ def get_rooms_by_flat(flat_code: str):
         raise ValueError(f"Error getting room by flat: pls check your inputs")
 
 
-def update_room_name(room_id: int, name: str):
+def update_room_name(room_id: int, name: str, flat_code: str):
     try:
+        validate_room_id_with_flat_code(room_id, flat_code)
         update_name_stmt = "UPDATE room SET name=%s WHERE room_id=%s"
 
         with get_connection().cursor() as cur:
@@ -74,8 +75,9 @@ def update_room_name(room_id: int, name: str):
     except MySQLError as e:
         raise ValueError(f"Error updating room: pls check your inputs")
 
-def delete_room(room_id: str):
+def delete_room(room_id: str, flat_code: str):
     try:
+        validate_room_id_with_flat_code(room_id, flat_code)
         delete_stmt = "DELETE FROM room WHERE room_id=%s"
 
         with get_connection().cursor() as cur:
@@ -104,7 +106,24 @@ def get_room_by_id(room_id: int):
             flat_code=result[2]
         )
 
-        print(room_model)
         return room_model
     except MySQLError as e:
         raise ValueError(f"Error getting room: pls check your inputs")
+    
+    
+def validate_room_id_with_flat_code(room_id: int, flat_code: str):
+    try:
+        get_room_stmt = "SELECT flat_code FROM room WHERE room_id=%s"
+
+        with get_connection().cursor() as cur:
+            cur.execute(get_room_stmt, (room_id,))
+            result = cur.fetchone()
+
+        if not result:
+            raise ValueError(f"Error getting room: room_id not found")
+
+        if(result[0] != flat_code):
+            raise ValueError(f"Error getting room: invalid room_id for this flat")
+
+    except MySQLError as e:
+        raise ValueError(f"Error getting room: invalid user or details")

@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 from dao import flatmate_dao
 from model import user
+from dao import flatmate_dao
 
 
 SECRET_KEY = config("SECRET_KEY")
