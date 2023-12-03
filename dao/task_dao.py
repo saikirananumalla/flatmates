@@ -252,21 +252,22 @@ def get_task_details_by_flat_code(flat_code: str, date: Optional[str] = None):
     
     return result
 
-def get_task_details_by_flatmate(username: str):
+def get_task_details_by_flatmate(username: str, date: Optional[str] = None):
     get_task_stmt = "select task_id from task where current_assigned_to=%s"
     cur.execute(get_task_stmt,
-                (username))
+                username)
     result_task_ids = cur.fetchall()
     
     if len(result_task_ids) == 0:
         raise ValueError("No tasks found for the user.")
     
-    print("hello")
-    
     result = []
     
     for task_id in result_task_ids:
         result.append(get_task_details(task_id))
+        
+    if date is not None:
+        return get_task_details_date(tasks=result, date=date)
     
     return result
 
@@ -287,7 +288,14 @@ def get_task_details_date(tasks: List[GetTask], date: str):
 
         delta = frequency_mapping.get(task.frequency.lower())
         task_date = datetime.strptime(task.task_date, '%Y-%m-%d')
-        if abs(focus_date - task_date).days % delta.days == 0:
+        
+        date_dif = abs(focus_date - task_date).days
+        
+        if date_dif == 0:
+            result_tasks_for_date.append(task)
+        elif date_dif != 0 and task.frequency == "NO_REPEAT":
+            continue
+        elif date_dif % delta.days == 0:
             result_tasks_for_date.append(task)
 
     return result_tasks_for_date
