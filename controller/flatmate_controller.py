@@ -61,6 +61,21 @@ def get_flatmate(current_user: user.AuthUser = Depends(get_current_user)):
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     
+@flatmate_router.get("/flatmate/check_membership", response_model=bool, tags=["flatmate"])
+def check_flat_membership(current_user: user.AuthUser = Depends(get_current_user)):
+    try:
+        if current_user.flat_code is None:
+            return False
+        
+        result = flatmate_dao.get_flatmate(current_user.username)
+        
+        if result is None:
+            return False
+
+        return True
+    except ValueError as ve:
+        return False
+    
     
 @flatmate_router.get("/flatmates/flat/all", response_model=List[flatmate.FlatmateWithRoomName], tags=["flatmate"])
 def get_flatmates_in_flat(current_user: user.AuthUser = Depends(get_current_user)):

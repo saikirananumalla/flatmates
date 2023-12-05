@@ -4,6 +4,7 @@ from fastapi.security import HTTPBasicCredentials, HTTPBearer, OAuth2PasswordReq
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 import hashlib
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Annotated
 from config.oauth import create_access_token, get_current_user
 
@@ -27,6 +28,21 @@ app.include_router(flatmate_router)
 app.include_router(task_router)
 app.include_router(belonging_router)
 
+origins = [
+    "http://localhost.tiangolo.com",
+    "https://localhost.tiangolo.com",
+    "http://localhost",
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # Login route to get JWT token
 @app.post("/login", tags=["login"])
@@ -45,3 +61,4 @@ async def login(login_form: user.LoginForm):
     token_data = {"sub": user.username}
     access_token =  {"access_token": create_access_token(token_data), "token_type": "bearer"}
     return access_token
+
