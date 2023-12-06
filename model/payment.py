@@ -11,7 +11,7 @@ class UpdatePayment(BaseModel):
     affected_flatmates: Optional[List[str]]
     paid_amount: float
     payment_type: str
-    payment_id: int = None
+    payment_id: int
 
 
 class PaymentDetails(BaseModel):

@@ -29,9 +29,7 @@ app.include_router(task_router)
 app.include_router(belonging_router)
 
 origins = [
-    "http://localhost.tiangolo.com",
-    "https://localhost.tiangolo.com",
-    "http://localhost",
+    "http://127.0.0.1:3000",
     "http://localhost:3000",
 ]
 

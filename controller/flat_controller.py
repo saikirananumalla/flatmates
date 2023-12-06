@@ -13,7 +13,7 @@ def create_flat(flat_name: str, current_user: user.AuthUser = Depends(get_curren
             raise HTTPException(status_code=401, detail="Not Authorized, user already registered in a flat")
         
         resp = flat_dao.create_flat(name=flat_name)
-        flatmate_dao.create_flatmate(flatmate.FlatmateBase(username=current_user.username, flat_code=current_user.flat_code))
+        flatmate_dao.create_flatmate(flatmate.FlatmateBase(username=current_user.username, flat_code=resp.flat_code))
         return resp
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))

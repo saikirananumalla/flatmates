@@ -11,7 +11,7 @@ from dao import flatmate_dao
 
 SECRET_KEY = config("SECRET_KEY")
 ALGORITHM = config("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = 15
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440
 
 
 # Function to create JWT tokens
