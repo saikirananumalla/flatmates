@@ -10,7 +10,7 @@ class UpdateBelonging(BaseModel):
 class Belonging(UpdateBelonging):
     flat_code: str
     
-class BelongingStr(UpdateBelonging):
+class BelongingStr(BaseModel):
     belonging_id: int
     description: Optional[str]
     name: str

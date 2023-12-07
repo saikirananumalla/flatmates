@@ -38,7 +38,7 @@ def get_belonging(name: str, flat_code: str):
         
         belonging_model = belonging.BelongingStr(
             belonging_id=result[0],
-            descrition=result[1],
+            description=result[1],
             name=result[2],
             flat_code=result[3],
             owners=result[4]
