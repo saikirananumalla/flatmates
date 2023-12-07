@@ -1,0 +1,6 @@
+fastapi==0.98.0
+pymysql
+uvicorn
+python-decouple
+python-jose
+python-multipart
