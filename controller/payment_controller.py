@@ -72,11 +72,11 @@ def get_money_owe(current_user: user.AuthUser = Depends(get_current_user)):
 
 
 @payment_router.put("/payment/{payment_id}", response_model=str, tags=["payments"])
-def mark_payment_as_done(payment_id: int, paid_status: bool,
+def mark_payment_as_done(payment_id: int, paid_status: bool, username: str,
                          current_user: user.AuthUser = Depends(get_current_user)):
     try:
         payments_result = payment_dao.update_payment_by_user(
-            p_id=payment_id, username=current_user.username, paid_status=paid_status)
+            p_id=payment_id, username=username, paid_status=paid_status)
         return payments_result
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
