@@ -282,7 +282,7 @@ def get_task_details_by_flat_code(flat_code: str, date: Optional[str] = None):
         result_task_ids = cur.fetchall()
 
         if len(result_task_ids) == 0:
-            raise ValueError("No tasks found under the given flat code.")
+            return []
 
         result = []
 
@@ -352,7 +352,7 @@ def get_task_details_by_flatmate(username: str, flat_code: str,  date: Optional[
 
             result = []
             get_task_stmt_by_flat = ("select task_id, current_assigned_to, frequency, task_date"
-                                     " from task where flat_code=%s and task_ended=false")
+                                     " from task where flat_code=%s and task_ended=0")
             cur.execute(get_task_stmt_by_flat, flat_code)
 
             result_task_details = cur.fetchall()
