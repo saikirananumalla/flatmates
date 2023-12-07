@@ -1,3 +1,5 @@
+import datetime
+
 from config.oauth import get_current_user
 from dao import task_dao
 from fastapi import APIRouter, HTTPException, Depends
@@ -62,7 +64,32 @@ def get_task_details_by_flatmate(
         get_task_details_by_flatmate_result = task_dao.get_task_details_by_flatmate(
             username=current_user.username, date=date
         )
+
+        if get_task_details_by_flatmate_result is None:
+
+            return []
+
         return get_task_details_by_flatmate_result
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+
+
+@task_router.get("/task/user/all/summary", response_model=List[GetTask], tags=["task"])
+def get_task_details_by_flatmate_summary(current_user: user.AuthUser = Depends(get_current_user)):
+    try:
+        result = []
+        today_date = datetime.datetime.now()
+        for i in range(8):
+            focus_date = today_date + datetime.timedelta(days=i)
+            focus_date = focus_date.strftime("%Y-%m-%d")
+            get_task_details_by_flatmate_result = task_dao.get_task_details_by_flatmate(
+                username=current_user.username, date=focus_date
+            )
+            if get_task_details_by_flatmate_result is None:
+                continue
+            for task in get_task_details_by_flatmate_result:
+                result.append(task)
+        return result
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
 
