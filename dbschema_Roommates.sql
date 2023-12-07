@@ -119,8 +119,6 @@ begin
 end $
 delimiter ;
 
-call get_belonging_by_flatmate("vishnu", "SEIGNNMKZZ");
-
 
 drop procedure if exists insert_belonging;
 delimiter $
