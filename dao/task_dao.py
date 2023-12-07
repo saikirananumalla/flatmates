@@ -302,7 +302,7 @@ def get_task_details_by_flatmate(username: str, date: Optional[str] = None):
         result_task_ids = cur.fetchall()
 
         if len(result_task_ids) == 0:
-            raise ValueError("No tasks found for the user.")
+            return []
 
         result = []
 
