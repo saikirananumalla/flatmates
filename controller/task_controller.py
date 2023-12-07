@@ -62,7 +62,7 @@ def get_task_details_by_flatmate(
 ):
     try:
         get_task_details_by_flatmate_result = task_dao.get_task_details_by_flatmate(
-            username=current_user.username, date=date
+            username=current_user.username, flat_code=current_user.flat_code, date=date
         )
 
         if get_task_details_by_flatmate_result is None:
@@ -83,7 +83,7 @@ def get_task_details_by_flatmate_summary(current_user: user.AuthUser = Depends(g
             focus_date = today_date + datetime.timedelta(days=i)
             focus_date = focus_date.strftime("%Y-%m-%d")
             get_task_details_by_flatmate_result = task_dao.get_task_details_by_flatmate(
-                username=current_user.username, date=focus_date
+                username=current_user.username, date=focus_date, flat_code=current_user.flat_code
             )
             if get_task_details_by_flatmate_result is None:
                 continue
@@ -109,7 +109,7 @@ def update_task(
         raise HTTPException(status_code=400, detail=str(ve))
 
 
-@task_router.patch("/task/{task_id}", response_model=GetTask, tags=["task"])
+@task_router.put("/task/{task_id}", response_model=GetTask, tags=["task"])
 def update_task_done(
     task_id: int, current_user: user.AuthUser = Depends(get_current_user)
 ):
