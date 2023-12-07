@@ -18,7 +18,7 @@ def create_task(task_details: CreateTask):
         with get_connection().cursor() as cur:
             # Date validation.
             task_date = datetime.strptime(task_details.task_date, "%Y-%m-%d")
-            if task_date < datetime.now():
+            if task_date.date() < datetime.now().date():
                 raise ValueError("Invalid Date")
 
             # Check if the first person in the list is a valid member of the flat.
@@ -295,24 +295,107 @@ def get_task_details_by_flat_code(flat_code: str, date: Optional[str] = None):
         return result
 
 
-def get_task_details_by_flatmate(username: str, date: Optional[str] = None):
+def is_user_current_user_for_date(current_date, current_assigned_user, frequency,
+                                  task_date, focus_user, sequence) -> bool:
+
+    start_point = 0
+    current_date = datetime.strptime(current_date, "%Y-%m-%d")
+    task_date = datetime.strptime(task_date, "%Y-%m-%d")
+
+    if current_date < task_date:
+        return False
+
+    if frequency.lower() == "no_repeat":
+        if task_date == current_date:
+            return True
+        else:
+            return False
+
+    for i in range(len(sequence)):
+        if sequence[i] == current_assigned_user:
+            start_point = i
+
+    frequency_mapping = {
+            "daily": 1,
+            "weekly": 7,
+            "monthly": 30,
+        }
+
+    unit_step = frequency_mapping.get(frequency.lower())
+    date_check = abs(current_date - task_date).days % unit_step
+    if date_check != 0:
+        return False
+    date_diff = abs(current_date - task_date).days // unit_step
+    total_step = start_point + date_diff
+    total_step = total_step % len(sequence)
+
+    if sequence[total_step] == focus_user:
+        return True
+    else:
+        return False
+
+
+def get_task_details_by_flatmate(username: str, flat_code: str,  date: Optional[str] = None):
+
     with get_connection().cursor() as cur:
-        get_task_stmt = "select task_id from task where current_assigned_to=%s"
-        cur.execute(get_task_stmt, username)
-        result_task_ids = cur.fetchall()
+        if date is None:
+            result = []
+            get_task_stmt = "select task_id from task where current_assigned_to=%s"
+            cur.execute(get_task_stmt, username)
+            result_task_ids = cur.fetchall()
+            if len(result_task_ids) == 0:
+                return []
+            for task_id in result_task_ids:
+                result.append(get_task_details(task_id[0]))
+            return result
+        else:
 
-        if len(result_task_ids) == 0:
+            result = []
+            get_task_stmt_by_flat = ("select task_id, current_assigned_to, frequency, task_date"
+                                     " from task where flat_code=%s and task_ended=false")
+            cur.execute(get_task_stmt_by_flat, flat_code)
+
+            result_task_details = cur.fetchall()
+            if len(result_task_details) == 0:
+                return []
+            result_task_ids_for_date = []
+            for flat_task_detail in result_task_details:
+
+                sequence = get_sequence_list(task_id=flat_task_detail[0])
+                if username in sequence:
+                    task_date = str(flat_task_detail[3])
+                    if is_user_current_user_for_date(current_date=date,
+                                                     current_assigned_user=flat_task_detail[1],
+                                                     frequency=flat_task_detail[2],
+                                                     task_date=task_date,
+                                                     focus_user=username,
+                                                     sequence=sequence):
+
+                        result_task_ids_for_date.append(flat_task_detail[0])
+
+                    else:
+                        continue
+                else:
+                    continue
+
+            for task_id in result_task_ids_for_date:
+                task = get_task_details(task_id)
+                task.task_date = date
+                result.append(task)
+                
+            return result
+
+
+def get_sequence_list(task_id: str) -> List[str]:
+    with get_connection().cursor() as cur:
+        get_task_order_stmt = "select username, seq_number from task_order where task_id=%s"
+        cur.execute(get_task_order_stmt, task_id)
+        result = cur.fetchall()
+        result = list(result)
+        if len(result) == 0:
             return []
-
-        result = []
-
-        for task_id in result_task_ids:
-            result.append(get_task_details(task_id[0]))
-
-        if date is not None:
-            return get_task_details_date(tasks=result, date=date)
-
-        return result
+        result.sort(key=lambda x: x[1])
+        return [username[0] for username in result]
 
 
 def get_task_details_date(tasks: List[GetTask], date: str):
@@ -339,6 +422,7 @@ def get_task_details_date(tasks: List[GetTask], date: str):
         elif date_dif != 0 and task.frequency == "NO_REPEAT":
             continue
         elif date_dif % delta.days == 0:
+            task.task_date = date
             result_tasks_for_date.append(task)
 
     return result_tasks_for_date
