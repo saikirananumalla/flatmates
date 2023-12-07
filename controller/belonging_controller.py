@@ -73,6 +73,8 @@ def get_belongings_in_flat(current_user: user.AuthUser = Depends(get_current_use
             raise HTTPException(status_code=401, detail="User not registered in any flat")
         
         result = belonging_dao.get_belongings_by_flat(current_user.flat_code)
+        if result is None:
+            return []
         return result
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
@@ -86,6 +88,9 @@ def get_belongings_of_user(current_user: user.AuthUser = Depends(get_current_use
             raise HTTPException(status_code=401, detail="User not registered in any flat")
         
         result = belonging_dao.get_belongings_by_flatmate(current_user.username, current_user.flat_code)
+        if result is None:
+            return []
+            
         return result
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
