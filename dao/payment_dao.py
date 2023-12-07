@@ -87,7 +87,7 @@ def get_payment_details_by_flat_code(flat_code: str) -> List[GetPayment]:
     result = []
     get_payment_details_stmt = (
         "SELECT payment_id, flat_code, name, paid_by, amount_paid,"
-        " payment_type, payment_date FROM payment where flat_code=%s"
+        " payment_type, payment_date FROM payment where flat_code=%s order by payment_date desc"
     )
     get_affected_flatmates_for_payment_stmt = (
         "select username, is_paid from payment_affected_users where payment_id=%s"
@@ -131,7 +131,7 @@ def get_payment_details_by_username(username: str) -> List[GetPayment]:
     result = []
     get_payment_details_stmt = (
         "SELECT payment_id, flat_code, name, paid_by, amount_paid,"
-        " payment_type, payment_date FROM payment where paid_by=%s"
+        " payment_type, payment_date FROM payment where paid_by=%s order by payment_date desc"
     )
     get_affected_flatmates_for_payment_stmt = (
         "select username, is_paid from payment_affected_users where payment_id=%s"
@@ -175,7 +175,7 @@ def get_payment_details_involve_username(username: str) -> List[GetPayment]:
     result = []
     get_payment_details_stmt = (
         "SELECT payment_id, flat_code, name, paid_by, amount_paid,"
-        " payment_type, payment_date FROM payment where payment_id=%s"
+        " payment_type, payment_date FROM payment where payment_id=%s order by payment_date desc"
     )
     get_affected_flatmates_for_payment_stmt = (
         "select payment_id from payment_affected_users where username=%s"
@@ -338,7 +338,7 @@ def get_money_owed(username: str):
             to_be_paid = payment.paid_amount / number_of_users
             for user in payment.affected_flatmates:
 
-                if user[1] == "1":
+                if user[1] == "1" or user[0] == username :
                     continue
                 else:
                     num_unpaid_users = num_unpaid_users + 1
@@ -370,7 +370,7 @@ def get_money_owe(username):
             for tup in payment.affected_flatmates:
                 roommate = tup[0]
                 has_paid = tup[1]
-                if roommate == username and has_paid == "0":
+                if roommate == username and payment.payee != username and has_paid == "0":
                     amount = payment.paid_amount / len(payment.affected_flatmates)
                     total = total + amount
                     money_owe.setdefault(payment.payee, 0)

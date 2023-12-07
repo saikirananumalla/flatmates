@@ -82,7 +82,7 @@ def mark_payment_as_done(payment_id: int, paid_status: bool, username: str,
         raise HTTPException(status_code=400, detail=str(ve))
 
 
-@payment_router.put("/payment/update", response_model=UpdatePayment,
+@payment_router.put("/payment/update/payment_id/{payment_id}", response_model=UpdatePayment,
                       tags=["payments"])
 def update_payment_details(payment_details: UpdatePayment,
                            current_user: user.AuthUser = Depends(get_current_user)):

@@ -159,7 +159,7 @@ def update_task_done_by_user(task_id: int, flat_code_user: str):
                 raise ValueError("User not authorized to update the task")
 
             task_ended = False
-            if res[0] == "NO_REPEAT":
+            if res[0] == "NO_REPEAT":  
                 task_ended = True
 
             get_new_task_date = getDateFromFreq(res[0], str(res[1]))
