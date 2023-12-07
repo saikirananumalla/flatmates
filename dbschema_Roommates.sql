@@ -101,7 +101,7 @@ delimiter $
 create procedure get_belonging_by_flat(flat_code_p char(10))
 begin
     select belonging.*, group_concat(username) from belonging left join belonging_owner on belonging.belonging_id = belonging_owner.belonging_id
-		where flat_code = flat_code_p group by belonging_id, description, name, flat_code;
+		where flat_code = flat_code_p group by belonging_id, description, name, flat_cod;
 end $
 delimiter ;
 
@@ -110,10 +110,16 @@ drop procedure if exists get_belonging_by_flatmate;
 delimiter $
 create procedure get_belonging_by_flatmate(username_p varchar(64), flat_code_p char(10))
 begin
-    select belonging.*, group_concat(username) from belonging join belonging_owner on belonging.belonging_id = belonging_owner.belonging_id
-		where username = username_p and flat_code = flat_code_p group by belonging_id, description, name, flat_code;
+
+	select belonging.*, group_concat(username) from belonging left join belonging_owner on belonging.belonging_id = belonging_owner.belonging_id
+		where belonging.belonging_id in (
+			select belonging.belonging_id from belonging left join belonging_owner on belonging.belonging_id = belonging_owner.belonging_id
+			where username = username_p and flat_code = flat_code_p group by belonging.belonging_id, description, name, flat_code)
+        group by belonging.belonging_id, description, name, flat_code;
 end $
 delimiter ;
+
+call get_belonging_by_flatmate("vishnu", "SEIGNNMKZZ");
 
 
 drop procedure if exists insert_belonging;
