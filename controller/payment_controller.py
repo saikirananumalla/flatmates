@@ -71,7 +71,7 @@ def get_money_owe(current_user: user.AuthUser = Depends(get_current_user)):
         raise HTTPException(status_code=400, detail=str(ve))
 
 
-@payment_router.patch("/payment/{payment_id}", response_model=str, tags=["payments"])
+@payment_router.put("/payment/{payment_id}", response_model=str, tags=["payments"])
 def mark_payment_as_done(payment_id: int, paid_status: bool,
                          current_user: user.AuthUser = Depends(get_current_user)):
     try:
