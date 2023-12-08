@@ -217,28 +217,60 @@ create table task_order(
                            constraint unq_task_sequence unique(task_id, username, seq_number)
 );
 
+
 -- write a trigger to populate current_assigned_to from task_order if a flatmate leaves
 drop trigger if exists update_task_when_flatmate_leaves;
 delimiter $
 create trigger update_task_when_flatmate_leaves 
-	after delete on flatmate
+	before delete on flatmate
 for each row
 begin
-declare task_not_found boolean default false;
+		declare task_not_found boolean default false;
         declare task_id_var int;
-        declare next_user_var varchar(64);
-		declare task_id_cur cursor for select task_id from task where current_assigned_to = old.username;
-        declare exit handler for not found
+        declare cur_user_var varchar(64);
+		declare username_out_p varchar(64);
+		declare seq_no_cur int;
+        
+        declare sq_no_var1 int;
+        declare task_id_var1 int;
+        
+        declare task_id_cur cursor for select task.task_id, seq_number from task join task_order on task.task_id = task_order.task_id where current_assigned_to = old.username;
+		declare task_id_cur1 cursor for select task_id, seq_number from task_order where username = old.username;
+        
+        declare continue handler for not found
 			set task_not_found = true;
-		open task_id_cur;
+            
+		set task_not_found = false;
+        
+        open task_id_cur;
         while task_not_found = false do
-			fetch task_id_cur into task_id_var;
-            call next_flatmate_to_perform_task(task_id_var, next_user_var);
-			update task
-				set current_assigned_to = next_user_var where task_id = task_id_var;
+				fetch task_id_cur into task_id_var, seq_no_cur;
+            
+				select current_assigned_to into cur_user_var from task where task_id = task_id_var;
+				
+				select username into username_out_p from task_order where task_id = task_id_var and seq_number = seq_no_cur + 1 and username!=cur_user_var;
+                
+				if username_out_p is null then
+					select username into username_out_p from task_order where task_id = task_id_var and seq_number = 1;
+				end if;
+                
+				update task
+					set current_assigned_to = username_out_p where task_id = task_id_var;
+                    
 		end while;
+        
+        set task_not_found = false;
+            
+		open task_id_cur1;
+        while task_not_found = false do
+			fetch task_id_cur1 into task_id_var1, sq_no_var1;
+			update task_order
+				set seq_number = seq_number - 1 where task_id = task_id_var1 and seq_number > sq_no_var1;
+		end while;
+        
 end $
 delimiter ;
+
 
 -- procedure to get next assigned person
 drop procedure if exists next_flatmate_to_perform_task;
@@ -263,28 +295,6 @@ begin
 		end if;
     end if;
 end $
-delimiter ;
-
--- write trigger to update sq no when a flatmate leaves
-drop trigger if exists update_task_seq_on_flatmate_delete;
-delimiter $
-create trigger update_task_seq_on_flatmate_delete
-	after delete on flatmate
-for each row
-	begin
-		declare task_not_found boolean default false;
-        declare sq_no_var int;
-        declare task_id_var int;
-		declare task_id_cur cursor for select task_id, seq_number from task_order where username = old.username;
-        declare exit handler for not found
-			set task_not_found = true;
-		open task_id_cur;
-        while task_not_found = false do
-			fetch task_id_cur into task_id_var, sq_no_var;
-			update task_order
-				set seq_number = seq_number - 1 where task_id = task_id_var and seq_number > sq_no_var;
-		end while;
-	end $
 delimiter ;
 
 drop procedure if exists get_all_task_details_by_task_id;

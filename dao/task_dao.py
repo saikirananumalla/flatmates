@@ -218,7 +218,7 @@ def get_task_details(task_id: int) -> GetTask:
             task_id=result[0][0],
             task_name=result[0][1],
             frequency=result[0][2],
-            current_assigned_to=result[0][3],
+            current_assigned_to=result[0][3] if result[0][3]==None else "",
             task_date=str(result[0][4]),
             flat_code=result[0][5],
             username_sequence=result_list,

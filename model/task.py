@@ -1,4 +1,5 @@
 import datetime
+from typing import Optional
 
 from pydantic import BaseModel
 from pydantic.schema import List
@@ -9,7 +10,7 @@ class BaseTask(BaseModel):
     task_name: str
     frequency: str
     task_date: str
-    username_sequence: List[str]
+    username_sequence: Optional[List[str]] = None
 
 
 class CreateTask(BaseTask):
@@ -24,7 +25,7 @@ class UpdateTask(BaseTask):
 
 class GetTask(CreateTask, UpdateTask):
 
-    current_assigned_to: str
+    current_assigned_to: Optional[str] = None
 
 
 class TaskOrder(BaseModel):
