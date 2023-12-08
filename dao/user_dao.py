@@ -105,11 +105,11 @@ def update_user_profile(user_details: us.UpdateProfile, username: str) -> us.Use
         "UPDATE user SET email_id=%s, phone=%s, password=%s WHERE username=%s"
     )
     get_email_stmt = (
-        "SELECT * FROM user WHERE email_id=%s"
+        "SELECT * FROM user WHERE email_id=%s and username!=%s"
     )
     try:
         with get_connection().cursor() as cur:
-            cur.execute(get_email_stmt, user_details.email_id)
+            cur.execute(get_email_stmt, (user_details.email_id, username))
 
             if cur.rowcount > 0:
                 raise ValueError(f"Email ID already exists for " + user_details.email_id)
@@ -119,4 +119,4 @@ def update_user_profile(user_details: us.UpdateProfile, username: str) -> us.Use
                                                    hashed_password, username),)
             return get_user_by_user_name(username=username)
     except MySQLError as e:
-        raise ValueError(f"Error updating user: Check your inputs")
+        raise ValueError(f"Error updating user: Check your inputs" + str(e))
