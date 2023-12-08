@@ -203,7 +203,7 @@ flat_code char(10) not null,
 task_ended boolean default false,
 foreign key (current_assigned_to) references flatmate(username) on update cascade on delete set null,
 foreign key (flat_code) references flat(flat_code) on update cascade on delete cascade,
-constraint unq_task unique(task_name, current_assigned_to)
+constraint unq_task unique(task_name, frequency, flat_code, current_assigned_to)
 );
 
 

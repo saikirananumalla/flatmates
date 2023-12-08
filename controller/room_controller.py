@@ -68,7 +68,7 @@ def get_rooms_in_flat(current_user: user.AuthUser = Depends(get_current_user)):
         
         result = room_dao.get_rooms_by_flat(current_user.flat_code)
         if result is None:
-            raise HTTPException(status_code=404, detail="Flat not found")
+            return []
         return result
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))

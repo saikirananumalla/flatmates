@@ -36,6 +36,24 @@ def get_flatmate(username: str):
     except MySQLError as e:
         raise ValueError(f"Error getting flatmate details: pls check your inputs")
     
+    
+def get_roomies(username: str):
+    try:
+        with get_connection().cursor() as cur:
+            cur.execute("select username from flatmate where room_id = (select room_id from flatmate where username = %s)", username)
+            result = cur.fetchall()
+        if len(result) == 0:
+            return None
+
+        lis = []
+
+        for res in result:
+            lis.append(res[0])
+
+        return lis
+    except MySQLError as e:
+        raise ValueError(f"Error getting flatmate details: pls check your inputs")
+    
 
     
 def get_flat_code_by_user(username: str):
