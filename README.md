@@ -15,7 +15,7 @@
 
 ## Run using conda
 If you have conda installed then just run the install.sh bash file on mac and linux.
-On windows, run the commands in install.sh file one by one in the virtual environment.
+On windows, run the commands in install.sh file one by one in a virtual environment.
 
 ## Run using Docker
 uncomment this line in config/db.py:
