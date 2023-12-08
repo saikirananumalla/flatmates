@@ -10,8 +10,8 @@
 3) rest of the dependencies can be found in requirements.txt
 
 ## Run using pip
-`pip install -r requirements.txt`
-`uvicorn app:app -reload`
+1) `pip install -r requirements.txt`
+2) `uvicorn app:app -reload`
 
 ## Run using conda
 If you have conda installed then just run the install.sh bash file on mac and linux.
@@ -24,5 +24,5 @@ uncomment this line in config/db.py:
 and change the host in config/db.py in pymysql.connect from local to the host variable you just uncommented
 
 run:
-`docker build --no-cache -t flatmates-backend .`
-`docker run -p 8000:8000 -it flatmates-backend`
+1) `docker build --no-cache -t flatmates-backend .`
+2) `docker run -p 8000:8000 -it flatmates-backend`
