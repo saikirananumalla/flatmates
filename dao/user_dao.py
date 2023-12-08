@@ -25,7 +25,8 @@ def get_user_by_user_name(username: str):
             return user_model
     except MySQLError as e:
         raise ValueError(f"Error getting user: pls check your inputs")
-    
+
+
 def get(username: str):
     try:
         get_by_username_stmt = (
@@ -96,4 +97,26 @@ def delete_user_by_user_name(username: str):
             return cur.rowcount > 0
     except MySQLError as e:
         raise ValueError(f"Error deleting user: pls check your inputs")
-    
+
+
+def update_user_profile(user_details: us.UpdateProfile, username: str) -> us.User:
+
+    update_user_profile_stmt = (
+        "UPDATE user SET email_id=%s, phone=%s, password=%s WHERE username=%s"
+    )
+    get_email_stmt = (
+        "SELECT * FROM user WHERE email_id=%s"
+    )
+    try:
+        with get_connection().cursor() as cur:
+            cur.execute(get_email_stmt, user_details.email_id)
+
+            if cur.rowcount > 0:
+                raise ValueError(f"Email ID already exists for " + user_details.email_id)
+
+            hashed_password = hashlib.sha256(user_details.password.encode('utf-8')).hexdigest()
+            cur.execute(update_user_profile_stmt, (user_details.email_id, user_details.phone,
+                                                   hashed_password, username),)
+            return get_user_by_user_name(username=username)
+    except MySQLError as e:
+        raise ValueError(f"Error updating user: Check your inputs")

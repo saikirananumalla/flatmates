@@ -20,7 +20,9 @@ def create_user(username: us.UserWithPassword):
 
 
 @user_router.get("/user_by_email/", response_model=us.User, tags=["user"])
-def get_user_by_email_id(email_id: str, current_user: user.AuthUser = Depends(get_current_user)):
+def get_user_by_email_id(
+    email_id: str, current_user: user.AuthUser = Depends(get_current_user)
+):
     try:
         db_user = user_dao.get_user_by_email(email_id=email_id)
         if db_user is None:
@@ -45,8 +47,31 @@ def get_user_by_username(current_user: user.AuthUser = Depends(get_current_user)
         raise HTTPException(status_code=400, detail=str(ve))
 
 
+@user_router.put("/update/profile", response_model=us.User, tags=["user"])
+def update_user_profile(
+    user_details: user.UpdateProfile,
+    current_user: user.AuthUser = Depends(get_current_user),
+):
+    try:
+
+        db_user = user_dao.get_user_by_user_name(username=current_user.username)
+        if db_user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        if current_user.username != db_user.username:
+            raise HTTPException(status_code=401, detail="User not authorised")
+        update_user_profile_result = user_dao.update_user_profile(
+            user_details, current_user.username
+        )
+        return update_user_profile_result
+
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+
+
 @user_router.delete("/user/", tags=["user"])
-def delete_user_by_username(username: str, current_user: user.AuthUser = Depends(get_current_user)):
+def delete_user_by_username(
+    username: str, current_user: user.AuthUser = Depends(get_current_user)
+):
     try:
         db_user = user_dao.get_user_by_user_name(username=username)
         if db_user is None:
