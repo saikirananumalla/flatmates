@@ -13,7 +13,7 @@ def get_connection() -> Connection:
             port=3306,
             user="root",
             password="password",
-            database="roommates",
+            database="flatmates",
             cursorclass=pymysql.cursors.Cursor,
             autocommit=True,
         )
