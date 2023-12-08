@@ -43,12 +43,12 @@ def get_task_details(
 
 @task_router.get("/task/flat/all", response_model=List[GetTask], tags=["task"])
 def get_task_details_by_flat_code(
-    date: Union[str, None] = None,
+    date: Union[str, None] = None, has_ended: Union[bool, None] = None,
     current_user: user.AuthUser = Depends(get_current_user),
 ):
     try:
         get_task_details_by_flat_code_result = task_dao.get_task_details_by_flat_code(
-            flat_code=current_user.flat_code, date=date
+            flat_code=current_user.flat_code, date=date, has_ended=has_ended
         )
         return get_task_details_by_flat_code_result
     except ValueError as ve:
@@ -57,12 +57,12 @@ def get_task_details_by_flat_code(
 
 @task_router.get("/task/user/all", response_model=List[GetTask], tags=["task"])
 def get_task_details_by_flatmate(
-    date: Union[str, None] = None,
+    date: Union[str, None] = None, has_ended: Union[bool, None] = None,
     current_user: user.AuthUser = Depends(get_current_user),
 ):
     try:
         get_task_details_by_flatmate_result = task_dao.get_task_details_by_flatmate(
-            username=current_user.username, flat_code=current_user.flat_code, date=date
+            username=current_user.username, flat_code=current_user.flat_code, date=date, has_ended=has_ended
         )
 
         if get_task_details_by_flatmate_result is None:

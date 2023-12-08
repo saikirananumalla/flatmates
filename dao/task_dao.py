@@ -274,11 +274,15 @@ def get_task_id_from_name_flat_code(task_name: str, flat_code: str):
         return task_id
 
 
-def get_task_details_by_flat_code(flat_code: str, date: Optional[str] = None):
+def get_task_details_by_flat_code(flat_code: str, date: Optional[str] = None, has_ended: Optional[bool] = None):
+    end = 0    
+    if has_ended is not None:
+        if has_ended == True:
+            end = 1
     with get_connection().cursor() as cur:
 
-        get_task_stmt = "select task_id from task where flat_code=%s"
-        cur.execute(get_task_stmt, flat_code)
+        get_task_stmt = "select task_id from task where flat_code=%s and task_ended=%s"
+        cur.execute(get_task_stmt, (flat_code, end),)
         result_task_ids = cur.fetchall()
 
         if len(result_task_ids) == 0:
@@ -335,13 +339,17 @@ def is_user_current_user_for_date(current_date, current_assigned_user, frequency
         return False
 
 
-def get_task_details_by_flatmate(username: str, flat_code: str,  date: Optional[str] = None):
+def get_task_details_by_flatmate(username: str, flat_code: str,  date: Optional[str] = None , has_ended: Optional[bool] = None):
+    end = 0    
+    if has_ended is not None:
+        if has_ended == True:
+            end = 1
 
     with get_connection().cursor() as cur:
         if date is None:
             result = []
-            get_task_stmt = "select task_id from task where current_assigned_to=%s"
-            cur.execute(get_task_stmt, username)
+            get_task_stmt = "select task_id from task where current_assigned_to=%s and task_ended=%s"
+            cur.execute(get_task_stmt, (username, end),)
             result_task_ids = cur.fetchall()
             if len(result_task_ids) == 0:
                 return []
@@ -352,8 +360,8 @@ def get_task_details_by_flatmate(username: str, flat_code: str,  date: Optional[
 
             result = []
             get_task_stmt_by_flat = ("select task_id, current_assigned_to, frequency, task_date"
-                                     " from task where flat_code=%s and task_ended=0")
-            cur.execute(get_task_stmt_by_flat, flat_code)
+                                     " from task where flat_code=%s and task_ended=%s")
+            cur.execute(get_task_stmt_by_flat, (flat_code, end),)
 
             result_task_details = cur.fetchall()
             if len(result_task_details) == 0:

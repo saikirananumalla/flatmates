@@ -3,16 +3,16 @@ import pymysql
 from pymysql import Connection
 from pymysql import cursors
 
-host = os.environ["DATABASE_HOST"]
+#host = os.environ["DATABASE_HOST"]
 
 
 def get_connection() -> Connection:
     try:
         connection = pymysql.connect(
-            host=host,
+            host="localhost",
             port=3306,
             user="root",
-            password="admin123",
+            password="password",
             database="roommates",
             cursorclass=pymysql.cursors.Cursor,
             autocommit=True,
