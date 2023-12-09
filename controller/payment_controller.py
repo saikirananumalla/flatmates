@@ -87,8 +87,6 @@ def mark_payment_as_done(payment_id: int, paid_status: bool, username: str,
 def update_payment_details(payment_details: UpdatePayment,
                            current_user: user.AuthUser = Depends(get_current_user)):
     try:
-        if payment_details.payee != current_user.username:
-            raise HTTPException(status_code=401, detail="User not authorised to update a payment")
         update_payments_result = payment_dao.update_payment_details(
             payment_details)
         return update_payments_result
